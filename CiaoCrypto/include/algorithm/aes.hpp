@@ -202,25 +202,25 @@ struct aes<K, std::enable_if_t<K == 16 || K ==24 || K ==32>> {
     inline static void subbytes(std::uint8_t* data) noexcept
     {
         constexpr SBox sbox;
-        data[ 0] ^= data[ 0] ^ sbox[data[ 0]];
-        data[ 1] ^= data[ 1] ^ sbox[data[ 1]];
-        data[ 2] ^= data[ 2] ^ sbox[data[ 2]];
-        data[ 3] ^= data[ 3] ^ sbox[data[ 3]];
+        data[ 0] = sbox[data[ 0]];
+        data[ 1] = sbox[data[ 1]];
+        data[ 2] = sbox[data[ 2]];
+        data[ 3] = sbox[data[ 3]];
 
-        data[ 4] ^= data[ 4] ^ sbox[data[ 4]];
-        data[ 5] ^= data[ 5] ^ sbox[data[ 5]];
-        data[ 6] ^= data[ 6] ^ sbox[data[ 6]];
-        data[ 7] ^= data[ 7] ^ sbox[data[ 7]];
+        data[ 4] = sbox[data[ 4]];
+        data[ 5] = sbox[data[ 5]];
+        data[ 6] = sbox[data[ 6]];
+        data[ 7] = sbox[data[ 7]];
 
-        data[ 8] ^= data[ 8] ^ sbox[data[ 8]];
-        data[ 9] ^= data[ 9] ^ sbox[data[ 9]];
-        data[10] ^= data[10] ^ sbox[data[10]];
-        data[11] ^= data[11] ^ sbox[data[11]];
+        data[ 8] = sbox[data[ 8]];
+        data[ 9] = sbox[data[ 9]];
+        data[10] = sbox[data[10]];
+        data[11] = sbox[data[11]];
 
-        data[12] ^= data[12] ^ sbox[data[12]];
-        data[13] ^= data[13] ^ sbox[data[13]];
-        data[14] ^= data[14] ^ sbox[data[14]];
-        data[15] ^= data[15] ^ sbox[data[15]];
+        data[12] = sbox[data[12]];
+        data[13] = sbox[data[13]];
+        data[14] = sbox[data[14]];
+        data[15] = sbox[data[15]];
     }
 
     inline static std::uint32_t rotword(std::uint32_t i) noexcept
@@ -231,39 +231,39 @@ struct aes<K, std::enable_if_t<K == 16 || K ==24 || K ==32>> {
     {
         std::uint8_t buf[block_size];
         std::memcpy(buf, data, block_size);
-        data[1] ^= data[1] ^ buf[5];
-        data[2] ^= data[2] ^ buf[10];
-        data[3] ^= data[3] ^ buf[15];
+        data[1] =buf[5];
+        data[2] =buf[10];
+        data[3] =buf[15];
 
-        data[5] ^= data[5] ^ buf[9];
-        data[6] ^= data[6] ^ buf[14];
-        data[7] ^= data[7] ^ buf[3];
+        data[5] =buf[9];
+        data[6] =buf[14];
+        data[7] =buf[3];
 
-        data[9] ^= data[9] ^ buf[13];
-        data[10]^= data[10] ^ buf[2];
-        data[11]^= data[11] ^ buf[7];
+        data[9] =buf[13];
+        data[10]= buf[2];
+        data[11]= buf[7];
 
-        data[13]^= data[13] ^ buf[1];
-        data[14]^= data[14] ^ buf[6];
-        data[15]^= data[15] ^ buf[11];
+        data[13]= buf[1];
+        data[14]= buf[6];
+        data[15]= buf[11];
     }
     inline static void inv_shift_rows(std::uint8_t* data) noexcept
     {
         std::uint8_t buf[block_size];
         std::memcpy(buf, data, block_size);
 
-        data[1]  ^= data[1] ^buf[13];
-        data[2]  ^= data[2] ^buf[10];
-        data[3]  ^= data[3] ^buf[7];
-        data[5]  ^= data[5] ^buf[1];
-        data[6]  ^= data[6] ^buf[14];
-        data[7]  ^= data[7] ^buf[11];
-        data[9]  ^= data[9] ^buf[5];
-        data[10] ^= data[10]^buf[2];
-        data[11] ^= data[11]^buf[15];
-        data[13] ^= data[13]^buf[9];
-        data[14] ^= data[14]^buf[6];
-        data[15] ^= data[15]^buf[3];
+        data[1]  = buf[13];
+        data[2]  = buf[10];
+        data[3]  = buf[7];
+        data[5]  = buf[1];
+        data[6]  = buf[14];
+        data[7]  = buf[11];
+        data[9]  = buf[5];
+        data[10] = buf[2];
+        data[11] = buf[15];
+        data[13] = buf[9];
+        data[14] = buf[6];
+        data[15] = buf[3];
     }
 
     inline static void mix_columns(std::uint8_t* data) noexcept
