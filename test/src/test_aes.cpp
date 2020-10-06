@@ -63,6 +63,10 @@ OUCHI_TEST_CASE(aes128_cipher)
     OUCHI_CHECK_EQUAL(src[0], 0x69);
     OUCHI_CHECK_EQUAL(src[1], 0xc4);
     OUCHI_CHECK_EQUAL(src[15], 0x5a);
+    encoder.inv_cipher(src);
+    OUCHI_CHECK_EQUAL(src[0], 0x00);
+    OUCHI_CHECK_EQUAL(src[1], 0x11);
+    OUCHI_CHECK_EQUAL(src[15], 0xff);
 }
 
 OUCHI_TEST_CASE(aes192_cipher)
@@ -79,6 +83,10 @@ OUCHI_TEST_CASE(aes192_cipher)
     OUCHI_CHECK_EQUAL(src[0], 0xdd);
     OUCHI_CHECK_EQUAL(src[1], 0xa9);
     OUCHI_CHECK_EQUAL(src[15], 0x91);
+    encoder.inv_cipher(src);
+    OUCHI_CHECK_EQUAL(src[0], 0x00);
+    OUCHI_CHECK_EQUAL(src[1], 0x11);
+    OUCHI_CHECK_EQUAL(src[15], 0xff);
 }
 
 OUCHI_TEST_CASE(aes256_cipher)
@@ -95,8 +103,13 @@ OUCHI_TEST_CASE(aes256_cipher)
     OUCHI_CHECK_EQUAL(src[0], 0x8e);
     OUCHI_CHECK_EQUAL(src[1], 0xa2);
     OUCHI_CHECK_EQUAL(src[15], 0x89);
+    encoder.inv_cipher(src);
+    OUCHI_CHECK_EQUAL(src[0], 0x00);
+    OUCHI_CHECK_EQUAL(src[1], 0x11);
+    OUCHI_CHECK_EQUAL(src[15], 0xff);
 }
 
+#ifdef NDEBUG
 OUCHI_TEST_CASE(aes128_benchmark)
 {
     using namespace std::chrono;
@@ -111,4 +124,5 @@ OUCHI_TEST_CASE(aes128_benchmark)
     std::cout << "aes-128 cbc " <<  data.size() / dur.count() / 1000 << " k\n";
 
 }
+#endif
 
