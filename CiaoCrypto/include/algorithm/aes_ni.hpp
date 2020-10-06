@@ -56,7 +56,7 @@ struct aes_ni<K, std::enable_if_t<K == 16 || K ==24 || K ==32>> : private aes<K>
     {
         auto state = _mm_loadu_si128(reinterpret_cast<__m128i*>(data));
         state = _mm_xor_si128(state, w128_[0]);
-        state = enc_round(state, std::make_index_sequence<nr-1>{});
+        enc_round(state, std::make_index_sequence<nr-1>{});
         state = _mm_aesenclast_si128(state, w128_[nr]);
         _mm_store_si128(reinterpret_cast<__m128i*>(data), state);
     }
@@ -65,20 +65,20 @@ struct aes_ni<K, std::enable_if_t<K == 16 || K ==24 || K ==32>> : private aes<K>
     {
         __m128i state = _mm_loadu_si128(reinterpret_cast<const __m128i*>(data));
         state = _mm_xor_si128(state, dw128_[nr]);
-        state = dec_round(state, std::make_index_sequence<nr-1>{});
+        dec_round(state, std::make_index_sequence<nr-1>{});
         state = _mm_aesdeclast_si128(state, dw128_[0]);
         _mm_storeu_si128(reinterpret_cast<__m128i*>(data), state);
     }
 
     template<size_t ...S>
-    inline [[nodiscard]] __m128i enc_round(__m128i state, std::index_sequence<S...>) const noexcept
+    inline void enc_round(__m128i& state, std::index_sequence<S...>) const noexcept
     {
-        return ((state = _mm_aesenc_si128(state, w128_[S + 1])), ...);
+        ((state = _mm_aesenc_si128(state, w128_[S + 1])), ...);
     }
     template<size_t ...S>
-    inline [[nodiscard]] __m128i dec_round(__m128i state, std::index_sequence<S...>) const noexcept
+    inline void dec_round(__m128i& state, std::index_sequence<S...>) const noexcept
     {
-        return ((state = _mm_aesdec_si128(state, dw128_[nr - S - 1])), ...);
+        ((state = _mm_aesdec_si128(state, dw128_[nr - S - 1])), ...);
     }
 
     alignas(16) __m128i w128_[nr+1];

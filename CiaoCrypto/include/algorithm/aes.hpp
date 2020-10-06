@@ -5,6 +5,8 @@
 #include <type_traits>
 #include <cstdint>
 #include <cstring>
+#include <cstddef>
+#include <utility>
 
 namespace ciao {
 
@@ -31,7 +33,6 @@ struct sbox_t {
     };
     constexpr std::uint8_t operator[](int i) const noexcept { return data[i]; }
 };
-constexpr sbox_t sbox;
 
 struct inv_sbox_t {
     static constexpr std::uint8_t data[256] = {
@@ -54,16 +55,33 @@ struct inv_sbox_t {
     };
     constexpr std::uint8_t operator[](int i) const noexcept { return data[i]; }
 };
-constexpr inv_sbox_t inv_sbox;
 
 struct gf_mul {
     std::uint8_t data[256];
+    std::uint8_t datae[256];
+    std::uint8_t data9[256];
+    std::uint8_t datad[256];
+    std::uint8_t datab[256];
+    std::uint8_t data2[256];
+    std::uint8_t data3[256];
     constexpr gf_mul()
         : data{}
+        , datae{}
+        , data9{}
+        , datad{}
+        , datab{}
+        , data2{}
+        , data3{}
     {
         using gf = ouchi::math::gf256<0x1b>;
         for (int i = 0; i < 256; ++i) {
             data[i] = gf::xmul(i);
+            datae[i] = gf::mul(i, 0x0e);
+            data9[i] = gf::mul(i, 0x09);
+            datad[i] = gf::mul(i, 0x0d);
+            datab[i] = gf::mul(i, 0x0b);
+            data2[i] = gf::mul(i, 0x02);
+            data3[i] = gf::mul(i, 0x03);
         }
     }
     constexpr std::uint8_t mul(std::uint8_t a, std::uint8_t b) const noexcept
@@ -76,8 +94,15 @@ struct gf_mul {
         }
         return res;
     }
+    constexpr std::uint8_t mul2(std::uint8_t a) const noexcept { return data2[a]; }
+    constexpr std::uint8_t mul9(std::uint8_t a) const noexcept { return data9[a]; }
+    constexpr std::uint8_t muld(std::uint8_t a) const noexcept { return datad[a]; }
+    constexpr std::uint8_t mulb(std::uint8_t a) const noexcept { return datab[a]; }
+    constexpr std::uint8_t mule(std::uint8_t a) const noexcept { return datae[a]; }
+    constexpr std::uint8_t mul3(std::uint8_t a) const noexcept { return data3[a]; }
 };
-constexpr gf_mul gf;
+inline constexpr gf_mul gf;
+
 } // namespace detail;
 
 template<size_t K, class = void>
@@ -248,10 +273,10 @@ struct aes<K, std::enable_if_t<K == 16 || K ==24 || K ==32>> {
         unsigned i4;
         for (auto i = 0u; i < 4; ++i) {
             i4 = i << 2;
-            x[0] = detail::gf.mul(2, data[i4]) ^ detail::gf.mul(3, data[1+i4]) ^ data[2+i4] ^ data[3+i4];
-            x[1] = data[i4] ^ detail::gf.mul(2, data[1+i4]) ^ detail::gf.mul(3, data[2+i4]) ^ data[3+i4];
-            x[2] = data[i4] ^ data[1+i4] ^ detail::gf.mul(2, data[2+i4]) ^ detail::gf.mul(3, data[3+i4]);
-            x[3] = detail::gf.mul(3, data[i4]) ^ data[1+i4] ^ data[2+i4] ^ detail::gf.mul(2, data[3+i4]);
+            x[0] = detail::gf.mul2(data[i4]) ^ detail::gf.mul3(data[1+i4]) ^ data[2+i4] ^ data[3+i4];
+            x[1] = data[i4] ^ detail::gf.mul2(data[1+i4]) ^ detail::gf.mul3(data[2+i4]) ^ data[3+i4];
+            x[2] = data[i4] ^ data[1+i4] ^ detail::gf.mul2(data[2+i4]) ^ detail::gf.mul3(data[3+i4]);
+            x[3] = detail::gf.mul3(data[i4]) ^ data[1+i4] ^ data[2+i4] ^ detail::gf.mul2(data[3+i4]);
 
             std::memcpy(data+i4, x, nb);
         }
@@ -264,10 +289,10 @@ struct aes<K, std::enable_if_t<K == 16 || K ==24 || K ==32>> {
 
         for (auto i = 0u; i < 4; ++i) {
             i4 = i << 2;
-            x[0] = detail::gf.mul(0x0e, data[i4]) ^ detail::gf.mul(0x0b, data[1+i4]) ^ detail::gf.mul(0x0d, data[2+i4]) ^ detail::gf.mul(0x09, data[3+i4]);
-            x[1] = detail::gf.mul(0x09, data[i4]) ^ detail::gf.mul(0x0e, data[1+i4]) ^ detail::gf.mul(0x0b, data[2+i4]) ^ detail::gf.mul(0x0d, data[3+i4]);
-            x[2] = detail::gf.mul(0x0d, data[i4]) ^ detail::gf.mul(0x09, data[1+i4]) ^ detail::gf.mul(0x0e, data[2+i4]) ^ detail::gf.mul(0x0b, data[3+i4]);
-            x[3] = detail::gf.mul(0x0b, data[i4]) ^ detail::gf.mul(0x0d, data[1+i4]) ^ detail::gf.mul(0x09, data[2+i4]) ^ detail::gf.mul(0x0e, data[3+i4]);
+            x[0] = detail::gf.mule(data[i4]) ^ detail::gf.mulb(data[1+i4]) ^ detail::gf.muld(data[2+i4]) ^ detail::gf.mul9(data[3+i4]);
+            x[1] = detail::gf.mul9(data[i4]) ^ detail::gf.mule(data[1+i4]) ^ detail::gf.mulb(data[2+i4]) ^ detail::gf.muld(data[3+i4]);
+            x[2] = detail::gf.muld(data[i4]) ^ detail::gf.mul9(data[1+i4]) ^ detail::gf.mule(data[2+i4]) ^ detail::gf.mulb(data[3+i4]);
+            x[3] = detail::gf.mulb(data[i4]) ^ detail::gf.muld(data[1+i4]) ^ detail::gf.mul9(data[2+i4]) ^ detail::gf.mule(data[3+i4]);
 
             std::memcpy(data+i4, x, nb);
         }
