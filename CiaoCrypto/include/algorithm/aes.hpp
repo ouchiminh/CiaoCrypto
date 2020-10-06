@@ -29,7 +29,7 @@ struct sbox_t {
         0xe1,0xf8,0x98,0x11,0x69,0xd9,0x8e,0x94,0x9b,0x1e,0x87,0xe9,0xce,0x55,0x28,0xdf,
         0x8c,0xa1,0x89,0x0d,0xbf,0xe6,0x42,0x68,0x41,0x99,0x2d,0x0f,0xb0,0x54,0xbb,0x16
     };
-    std::uint8_t operator[](int i) const noexcept { return data[i]; }
+    constexpr std::uint8_t operator[](int i) const noexcept { return data[i]; }
 };
 constexpr sbox_t sbox;
 
@@ -52,9 +52,32 @@ struct inv_sbox_t {
         0xa0,0xe0,0x3b,0x4d,0xae,0x2a,0xf5,0xb0,0xc8,0xeb,0xbb,0x3c,0x83,0x53,0x99,0x61,
         0x17,0x2b,0x04,0x7e,0xba,0x77,0xd6,0x26,0xe1,0x69,0x14,0x63,0x55,0x21,0x0c,0x7d
     };
-    std::uint8_t operator[](int i) const noexcept { return data[i]; }
+    constexpr std::uint8_t operator[](int i) const noexcept { return data[i]; }
 };
 constexpr inv_sbox_t inv_sbox;
+
+struct gf_mul {
+    std::uint8_t data[256];
+    constexpr gf_mul()
+        : data{}
+    {
+        using gf = ouchi::math::gf256<0x1b>;
+        for (int i = 0; i < 256; ++i) {
+            data[i] = gf::xmul(i);
+        }
+    }
+    constexpr std::uint8_t mul(std::uint8_t a, std::uint8_t b) const noexcept
+    {
+        std::uint8_t res{};
+        while (a) {
+            res ^= (a & 1 ? b : 0);
+            b = data[b];
+            a >>= 1;
+        }
+        return res;
+    }
+};
+constexpr gf_mul gf;
 } // namespace detail;
 
 template<size_t K, class = void>
@@ -154,25 +177,25 @@ struct aes<K, std::enable_if_t<K == 16 || K ==24 || K ==32>> {
     inline static void subbytes(std::uint8_t* data) noexcept
     {
         constexpr SBox sbox;
-        data[ 0] = sbox[data[ 0]];
-        data[ 1] = sbox[data[ 1]];
-        data[ 2] = sbox[data[ 2]];
-        data[ 3] = sbox[data[ 3]];
-                     
-        data[ 4] = sbox[data[ 4]];
-        data[ 5] = sbox[data[ 5]];
-        data[ 6] = sbox[data[ 6]];
-        data[ 7] = sbox[data[ 7]];
+        data[ 0] ^= data[ 0] ^ sbox[data[ 0]];
+        data[ 1] ^= data[ 1] ^ sbox[data[ 1]];
+        data[ 2] ^= data[ 2] ^ sbox[data[ 2]];
+        data[ 3] ^= data[ 3] ^ sbox[data[ 3]];
 
-        data[ 8] = sbox[data[ 8]];
-        data[ 9] = sbox[data[ 9]];
-        data[10] = sbox[data[10]];
-        data[11] = sbox[data[11]];
+        data[ 4] ^= data[ 4] ^ sbox[data[ 4]];
+        data[ 5] ^= data[ 5] ^ sbox[data[ 5]];
+        data[ 6] ^= data[ 6] ^ sbox[data[ 6]];
+        data[ 7] ^= data[ 7] ^ sbox[data[ 7]];
 
-        data[12] = sbox[data[12]];
-        data[13] = sbox[data[13]];
-        data[14] = sbox[data[14]];
-        data[15] = sbox[data[15]];
+        data[ 8] ^= data[ 8] ^ sbox[data[ 8]];
+        data[ 9] ^= data[ 9] ^ sbox[data[ 9]];
+        data[10] ^= data[10] ^ sbox[data[10]];
+        data[11] ^= data[11] ^ sbox[data[11]];
+
+        data[12] ^= data[12] ^ sbox[data[12]];
+        data[13] ^= data[13] ^ sbox[data[13]];
+        data[14] ^= data[14] ^ sbox[data[14]];
+        data[15] ^= data[15] ^ sbox[data[15]];
     }
 
     inline static std::uint32_t rotword(std::uint32_t i) noexcept
@@ -183,42 +206,39 @@ struct aes<K, std::enable_if_t<K == 16 || K ==24 || K ==32>> {
     {
         std::uint8_t buf[block_size];
         std::memcpy(buf, data, block_size);
-        data[1] = buf[5];
-        data[2] = buf[10];
-        data[3] = buf[15];
+        data[1] ^= data[1] ^ buf[5];
+        data[2] ^= data[2] ^ buf[10];
+        data[3] ^= data[3] ^ buf[15];
 
-        data[5] = buf[9];
-        data[6] = buf[14];
-        data[7] = buf[3];
+        data[5] ^= data[5] ^ buf[9];
+        data[6] ^= data[6] ^ buf[14];
+        data[7] ^= data[7] ^ buf[3];
 
-        data[9] = buf[13];
-        data[10] = buf[2];
-        data[11] = buf[7];
+        data[9] ^= data[9] ^ buf[13];
+        data[10]^= data[10] ^ buf[2];
+        data[11]^= data[11] ^ buf[7];
 
-        data[13] = buf[1];
-        data[14] = buf[6];
-        data[15] = buf[11];
+        data[13]^= data[13] ^ buf[1];
+        data[14]^= data[14] ^ buf[6];
+        data[15]^= data[15] ^ buf[11];
     }
     inline static void inv_shift_rows(std::uint8_t* data) noexcept
     {
         std::uint8_t buf[block_size];
         std::memcpy(buf, data, block_size);
 
-        data[1] = buf[13];
-        data[2] = buf[10];
-        data[3] = buf[7];
-
-        data[5] = buf[1];
-        data[6] = buf[14];
-        data[7] = buf[11];
-
-        data[9] = buf[5];
-        data[10] = buf[2];
-        data[11] = buf[15];
-
-        data[13] = buf[9];
-        data[14] = buf[6];
-        data[15] = buf[3];
+        data[1]  ^= data[1] ^buf[13];
+        data[2]  ^= data[2] ^buf[10];
+        data[3]  ^= data[3] ^buf[7];
+        data[5]  ^= data[5] ^buf[1];
+        data[6]  ^= data[6] ^buf[14];
+        data[7]  ^= data[7] ^buf[11];
+        data[9]  ^= data[9] ^buf[5];
+        data[10] ^= data[10]^buf[2];
+        data[11] ^= data[11]^buf[15];
+        data[13] ^= data[13]^buf[9];
+        data[14] ^= data[14]^buf[6];
+        data[15] ^= data[15]^buf[3];
     }
 
     inline static void mix_columns(std::uint8_t* data) noexcept
@@ -228,10 +248,10 @@ struct aes<K, std::enable_if_t<K == 16 || K ==24 || K ==32>> {
         unsigned i4;
         for (auto i = 0u; i < 4; ++i) {
             i4 = i << 2;
-            x[0] = gf::mul(2, data[i4]) ^ gf::mul(3, data[1+i4]) ^ data[2+i4] ^ data[3+i4];
-            x[1] = data[i4] ^ gf::mul(2, data[1+i4]) ^ gf::mul(3, data[2+i4]) ^ data[3+i4];
-            x[2] = data[i4] ^ data[1+i4] ^ gf::mul(2, data[2+i4]) ^ gf::mul(3, data[3+i4]);
-            x[3] = gf::mul(3, data[i4]) ^ data[1+i4] ^ data[2+i4] ^ gf::mul(2, data[3+i4]);
+            x[0] = detail::gf.mul(2, data[i4]) ^ detail::gf.mul(3, data[1+i4]) ^ data[2+i4] ^ data[3+i4];
+            x[1] = data[i4] ^ detail::gf.mul(2, data[1+i4]) ^ detail::gf.mul(3, data[2+i4]) ^ data[3+i4];
+            x[2] = data[i4] ^ data[1+i4] ^ detail::gf.mul(2, data[2+i4]) ^ detail::gf.mul(3, data[3+i4]);
+            x[3] = detail::gf.mul(3, data[i4]) ^ data[1+i4] ^ data[2+i4] ^ detail::gf.mul(2, data[3+i4]);
 
             std::memcpy(data+i4, x, nb);
         }
@@ -244,10 +264,10 @@ struct aes<K, std::enable_if_t<K == 16 || K ==24 || K ==32>> {
 
         for (auto i = 0u; i < 4; ++i) {
             i4 = i << 2;
-            x[0] = gf::mul(0x0e, data[i4]) ^ gf::mul(0x0b, data[1+i4]) ^ gf::mul(0x0d, data[2+i4]) ^ gf::mul(0x09, data[3+i4]);
-            x[1] = gf::mul(0x09, data[i4]) ^ gf::mul(0x0e, data[1+i4]) ^ gf::mul(0x0b, data[2+i4]) ^ gf::mul(0x0d, data[3+i4]);
-            x[2] = gf::mul(0x0d, data[i4]) ^ gf::mul(0x09, data[1+i4]) ^ gf::mul(0x0e, data[2+i4]) ^ gf::mul(0x0b, data[3+i4]);
-            x[3] = gf::mul(0x0b, data[i4]) ^ gf::mul(0x0d, data[1+i4]) ^ gf::mul(0x09, data[2+i4]) ^ gf::mul(0x0e, data[3+i4]);
+            x[0] = detail::gf.mul(0x0e, data[i4]) ^ detail::gf.mul(0x0b, data[1+i4]) ^ detail::gf.mul(0x0d, data[2+i4]) ^ detail::gf.mul(0x09, data[3+i4]);
+            x[1] = detail::gf.mul(0x09, data[i4]) ^ detail::gf.mul(0x0e, data[1+i4]) ^ detail::gf.mul(0x0b, data[2+i4]) ^ detail::gf.mul(0x0d, data[3+i4]);
+            x[2] = detail::gf.mul(0x0d, data[i4]) ^ detail::gf.mul(0x09, data[1+i4]) ^ detail::gf.mul(0x0e, data[2+i4]) ^ detail::gf.mul(0x0b, data[3+i4]);
+            x[3] = detail::gf.mul(0x0b, data[i4]) ^ detail::gf.mul(0x0d, data[1+i4]) ^ detail::gf.mul(0x09, data[2+i4]) ^ detail::gf.mul(0x0e, data[3+i4]);
 
             std::memcpy(data+i4, x, nb);
         }

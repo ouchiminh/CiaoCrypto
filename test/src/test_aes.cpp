@@ -4,6 +4,7 @@
 
 #include "../ouchitest/include/ouchitest.hpp"
 #include "algorithm/aes.hpp"
+#include "algorithm/aes_ni.hpp"
 
 OUCHI_TEST_CASE(aes128_key_expansion){
     std::uint8_t key[] = {
@@ -109,19 +110,96 @@ OUCHI_TEST_CASE(aes256_cipher)
     OUCHI_CHECK_EQUAL(src[15], 0xff);
 }
 
+OUCHI_TEST_CASE(aesni128_cipher)
+{
+    const char block[] = "\x00\x11\x22\x33\x44\x55\x66\x77\x88\x99\xaa\xbb\xcc\xdd\xee\xff";
+    const char key[] = "\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f";
+    std::uint8_t src[16];
+    std::memcpy(src, block, 16);
+    ciao::aes_ni<16> encoder(key);
+    encoder.cipher(src);
+    OUCHI_CHECK_EQUAL(src[0], 0x69);
+    OUCHI_CHECK_EQUAL(src[1], 0xc4);
+    OUCHI_CHECK_EQUAL(src[15], 0x5a);
+    encoder.inv_cipher(src);
+    OUCHI_CHECK_EQUAL(src[0], 0x00);
+    OUCHI_CHECK_EQUAL(src[1], 0x11);
+    OUCHI_CHECK_EQUAL(src[15], 0xff);
+}
+
+OUCHI_TEST_CASE(aesni192_cipher)
+{
+    const char block[] = "\x00\x11\x22\x33\x44\x55\x66\x77\x88\x99\xaa\xbb\xcc\xdd\xee\xff";
+    const char key[] =
+        "\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f"
+        "\x10\x11\x12\x13\x14\x15\x16\x17";
+
+    std::uint8_t src[16];
+    std::memcpy(src, block, 16);
+    ciao::aes_ni<24> encoder(key);
+    encoder.cipher(src);
+    OUCHI_CHECK_EQUAL(src[0], 0xdd);
+    OUCHI_CHECK_EQUAL(src[1], 0xa9);
+    OUCHI_CHECK_EQUAL(src[15], 0x91);
+    encoder.inv_cipher(src);
+    OUCHI_CHECK_EQUAL(src[0], 0x00);
+    OUCHI_CHECK_EQUAL(src[1], 0x11);
+    OUCHI_CHECK_EQUAL(src[15], 0xff);
+}
+
+OUCHI_TEST_CASE(aesni256_cipher)
+{
+    const char block[] = "\x00\x11\x22\x33\x44\x55\x66\x77\x88\x99\xaa\xbb\xcc\xdd\xee\xff";
+    const char key[] =
+        "\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f"
+        "\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f";
+
+    std::uint8_t src[16];
+    std::memcpy(src, block, 16);
+    ciao::aes_ni<32> encoder(key);
+    encoder.cipher(src);
+    OUCHI_CHECK_EQUAL(src[0], 0x8e);
+    OUCHI_CHECK_EQUAL(src[1], 0xa2);
+    OUCHI_CHECK_EQUAL(src[15], 0x89);
+    encoder.inv_cipher(src);
+    OUCHI_CHECK_EQUAL(src[0], 0x00);
+    OUCHI_CHECK_EQUAL(src[1], 0x11);
+    OUCHI_CHECK_EQUAL(src[15], 0xff);
+}
+
 #ifdef NDEBUG
 OUCHI_TEST_CASE(aes128_benchmark)
 {
     using namespace std::chrono;
     const char key[16] = {};
-    std::vector<std::uint8_t> data(1024*1000*20, 0xc5);
+    constexpr int r = 1024 * 2;
+    std::vector<std::uint8_t> data(1024*16, 0xc5);
     ciao::aes<16> encoder{ key };
     auto beg = std::chrono::steady_clock::now();
-    for (auto i = 0ull; i < data.size(); i += 16)
-        encoder.cipher(data.data() + i);
+    for (auto k = 0ull; k < r; ++k) {
+        for (auto i = 0ull; i < data.size(); i += 16)
+            encoder.cipher(data.data() + i);
+    }
 
     duration<double, std::ratio<1, 1>> dur = std::chrono::steady_clock::now() - beg;
-    std::cout << "aes-128 cbc " <<  data.size() / dur.count() / 1000 << " k\n";
+    std::cout << "aes-128 cbc " <<  data.size()*r / dur.count() / 1000 << " k\n";
+
+}
+OUCHI_TEST_CASE(aesni128_benchmark)
+{
+    using namespace std::chrono;
+    const char key[16] = {};
+    constexpr auto r = 1024*1024;
+    std::vector<std::uint8_t> data(1024*16, 0xc5);
+    ciao::aes_ni<16> encoder{ key };
+    auto beg = std::chrono::steady_clock::now();
+    for (auto k = 0ull; k < r; ++k) {
+        for (auto i = 0ull; i < data.size(); i += 16)
+            encoder.cipher(data.data() + i);
+    }
+
+    duration<double, std::ratio<1, 1>> dur = std::chrono::steady_clock::now() - beg;
+    std::cout << "aes-128 cbc " <<  data.size()*r / dur.count() / 1000'000 << " M\n";
 
 }
 #endif

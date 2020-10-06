@@ -20,8 +20,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\algorithm\aes.hpp" />
+    <ClInclude Include="include\algorithm\aes_ni.hpp" />
     <ClInclude Include="include\bytes.hpp" />
     <ClInclude Include="include\common.hpp" />
+    <ClInclude Include="include\gf.hpp" />
     <ClInclude Include="include\matrix.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
