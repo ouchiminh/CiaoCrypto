@@ -160,35 +160,33 @@ struct aes<K, std::enable_if_t<K == 16 || K ==24 || K ==32>> {
     }
     void cipher(std::uint8_t* data) noexcept
     {
-        this->data = data;
-        add_roundkey( 0);
+        add_roundkey(data, 0);
         for (auto i = 1u; i < nr; ++i) {
-            subbytes();
-            shift_rows();
-            mix_columns();
-            add_roundkey(i);
+            subbytes(data);
+            shift_rows(data);
+            mix_columns(data);
+            add_roundkey(data, i);
         }
-        subbytes();
-        shift_rows();
-        add_roundkey(nr);
+        subbytes(data);
+        shift_rows(data);
+        add_roundkey(data, nr);
     }
     void inv_cipher(std::uint8_t* data) noexcept
     {
-        this->data = data;
-        add_roundkey(nr);
+        add_roundkey(data, nr);
         for (auto i = nr - 1u; i > 0; --i) {
-            inv_shift_rows();
-            subbytes<detail::inv_sbox_t>();
-            add_roundkey(i);
-            inv_mix_columns();
+            inv_shift_rows(data);
+            subbytes<detail::inv_sbox_t>(data);
+            add_roundkey(data, i);
+            inv_mix_columns(data);
         }
-        inv_shift_rows();
-        subbytes<detail::inv_sbox_t>();
-        add_roundkey(0);
+        inv_shift_rows(data);
+        subbytes<detail::inv_sbox_t>(data);
+        add_roundkey(data, 0);
     }
 
     template<class SBox = detail::sbox_t>
-    inline std::uint32_t subword(std::uint32_t i) noexcept
+    inline static std::uint32_t subword(std::uint32_t i) noexcept
     {
         constexpr SBox sbox;
         union { std::uint32_t l; std::uint8_t b[4]; } tmp;
@@ -201,7 +199,7 @@ struct aes<K, std::enable_if_t<K == 16 || K ==24 || K ==32>> {
     }
 
     template<class SBox = detail::sbox_t>
-    inline void subbytes() noexcept
+    inline static void subbytes(std::uint8_t* data) noexcept
     {
         constexpr SBox sbox;
         data[ 0] = sbox[data[ 0]];
@@ -225,11 +223,11 @@ struct aes<K, std::enable_if_t<K == 16 || K ==24 || K ==32>> {
         data[15] = sbox[data[15]];
     }
 
-    inline std::uint32_t rotword(std::uint32_t i) noexcept
+    inline static std::uint32_t rotword(std::uint32_t i) noexcept
     {
         return rotl(i, 8);
     }
-    inline void shift_rows() noexcept
+    inline static void shift_rows(std::uint8_t* data) noexcept
     {
         std::uint8_t buf[block_size];
         std::memcpy(buf, data, block_size);
@@ -249,7 +247,7 @@ struct aes<K, std::enable_if_t<K == 16 || K ==24 || K ==32>> {
         data[14]= buf[6];
         data[15]= buf[11];
     }
-    inline void inv_shift_rows() noexcept
+    inline static void inv_shift_rows(std::uint8_t* data) noexcept
     {
         std::uint8_t buf[block_size];
         std::memcpy(buf, data, block_size);
@@ -268,7 +266,7 @@ struct aes<K, std::enable_if_t<K == 16 || K ==24 || K ==32>> {
         data[15] = buf[3];
     }
 
-    inline void mix_columns() noexcept
+    inline static void mix_columns(std::uint8_t* data) noexcept
     {
         using gf = ouchi::math::gf256<0x1b>;
         std::uint8_t x[4];
@@ -283,7 +281,7 @@ struct aes<K, std::enable_if_t<K == 16 || K ==24 || K ==32>> {
             std::memcpy(data+i4, x, nb);
         }
     }
-    inline void inv_mix_columns() noexcept
+    inline static void inv_mix_columns(std::uint8_t* data) noexcept
     {
         using gf = ouchi::math::gf256<0x1b>;
         std::uint8_t x[4];
@@ -301,7 +299,7 @@ struct aes<K, std::enable_if_t<K == 16 || K ==24 || K ==32>> {
     }
 
 //private:
-    inline void add_roundkey(unsigned r) noexcept
+    inline void add_roundkey(std::uint8_t* data, unsigned r) const noexcept
     {
         unpack(pack<std::uint32_t>(data+0) ^ w_[0 + r * nb], data);
         unpack(pack<std::uint32_t>(data+4) ^ w_[1 + r * nb], data+4);
@@ -309,7 +307,6 @@ struct aes<K, std::enable_if_t<K == 16 || K ==24 || K ==32>> {
         unpack(pack<std::uint32_t>(data+12) ^ w_[3 + r * nb], data+12);
     }
     std::uint32_t w_[nb*(nr+1)];
-    std::uint8_t* data;
 };
 
 }
