@@ -56,6 +56,9 @@ struct inv_sbox_t {
     constexpr std::uint8_t operator[](int i) const noexcept { return data[i]; }
 };
 
+constexpr sbox_t sbox;
+constexpr inv_sbox_t inv_sbox;
+
 struct gf_mul {
     std::uint8_t data[256];
     std::uint8_t datae[256];
@@ -162,26 +165,21 @@ struct aes<K, std::enable_if_t<K == 16 || K ==24 || K ==32>> {
     {
         add_roundkey(data, 0);
         for (auto i = 1u; i < nr; ++i) {
-            subbytes(data);
-            shift_rows(data);
-            mix_columns(data);
-            add_roundkey(data, i);
+            sub_bytes_shift_rows(data);
+            mix_columns_add_roundkey(data, i);
         }
-        subbytes(data);
-        shift_rows(data);
+        sub_bytes_shift_rows(data);
         add_roundkey(data, nr);
     }
     void inv_cipher(std::uint8_t* data) noexcept
     {
         add_roundkey(data, nr);
         for (auto i = nr - 1u; i > 0; --i) {
-            inv_shift_rows(data);
-            subbytes<detail::inv_sbox_t>(data);
+            inv_sub_bytes_shift_rows(data);
             add_roundkey(data, i);
             inv_mix_columns(data);
         }
-        inv_shift_rows(data);
-        subbytes<detail::inv_sbox_t>(data);
+        inv_sub_bytes_shift_rows(data);
         add_roundkey(data, 0);
     }
 
@@ -227,57 +225,62 @@ struct aes<K, std::enable_if_t<K == 16 || K ==24 || K ==32>> {
     {
         return rotl(i, 8);
     }
-    inline static void shift_rows(std::uint8_t* data) noexcept
+    inline static void sub_bytes_shift_rows(std::uint8_t* data) noexcept
     {
         std::uint8_t buf[block_size];
         std::memcpy(buf, data, block_size);
-        data[1] =buf[5];
-        data[2] =buf[10];
-        data[3] =buf[15];
-
-        data[5] =buf[9];
-        data[6] =buf[14];
-        data[7] =buf[3];
-
-        data[9] =buf[13];
-        data[10]= buf[2];
-        data[11]= buf[7];
-
-        data[13]= buf[1];
-        data[14]= buf[6];
-        data[15]= buf[11];
+        data[0]  = detail::sbox[buf[0]];
+        data[1]  = detail::sbox[buf[5]];
+        data[2]  = detail::sbox[buf[10]];
+        data[3]  = detail::sbox[buf[15]];
+        data[4]  = detail::sbox[buf[4]];
+        data[5]  = detail::sbox[buf[9]];
+        data[6]  = detail::sbox[buf[14]];
+        data[7]  = detail::sbox[buf[3]];
+        data[8]  = detail::sbox[buf[8]];
+        data[9]  = detail::sbox[buf[13]];
+        data[10] = detail::sbox[buf[2]];
+        data[11] = detail::sbox[buf[7]];
+        data[12] = detail::sbox[buf[12]];
+        data[13] = detail::sbox[buf[1]];
+        data[14] = detail::sbox[buf[6]];
+        data[15] = detail::sbox[buf[11]];
     }
-    inline static void inv_shift_rows(std::uint8_t* data) noexcept
+    inline static void inv_sub_bytes_shift_rows(std::uint8_t* data) noexcept
     {
         std::uint8_t buf[block_size];
         std::memcpy(buf, data, block_size);
-
-        data[1]  = buf[13];
-        data[2]  = buf[10];
-        data[3]  = buf[7];
-        data[5]  = buf[1];
-        data[6]  = buf[14];
-        data[7]  = buf[11];
-        data[9]  = buf[5];
-        data[10] = buf[2];
-        data[11] = buf[15];
-        data[13] = buf[9];
-        data[14] = buf[6];
-        data[15] = buf[3];
+        data[0]  = detail::inv_sbox[buf[0]];
+        data[1]  = detail::inv_sbox[buf[13]];
+        data[2]  = detail::inv_sbox[buf[10]];
+        data[3]  = detail::inv_sbox[buf[7]];
+        data[4]  = detail::inv_sbox[buf[4]];
+        data[5]  = detail::inv_sbox[buf[1]];
+        data[6]  = detail::inv_sbox[buf[14]];
+        data[7]  = detail::inv_sbox[buf[11]];
+        data[8]  = detail::inv_sbox[buf[8]];
+        data[9]  = detail::inv_sbox[buf[5]];
+        data[10] = detail::inv_sbox[buf[2]];
+        data[11] = detail::inv_sbox[buf[15]];
+        data[12] = detail::inv_sbox[buf[12]];
+        data[13] = detail::inv_sbox[buf[9]];
+        data[14] = detail::inv_sbox[buf[6]];
+        data[15] = detail::inv_sbox[buf[3]];
     }
 
-    inline static void mix_columns(std::uint8_t* data) noexcept
+    inline void mix_columns_add_roundkey(std::uint8_t* data, unsigned r) const noexcept
     {
         using gf = ouchi::math::gf256<0x1b>;
         std::uint8_t x[4];
+        std::uint8_t k[4];
         unsigned i4;
         for (auto i = 0u; i < 4; ++i) {
             i4 = i << 2;
-            x[0] = detail::gf.mul2(data[i4]) ^ detail::gf.mul3(data[1+i4]) ^ data[2+i4] ^ data[3+i4];
-            x[1] = data[i4] ^ detail::gf.mul2(data[1+i4]) ^ detail::gf.mul3(data[2+i4]) ^ data[3+i4];
-            x[2] = data[i4] ^ data[1+i4] ^ detail::gf.mul2(data[2+i4]) ^ detail::gf.mul3(data[3+i4]);
-            x[3] = detail::gf.mul3(data[i4]) ^ data[1+i4] ^ data[2+i4] ^ detail::gf.mul2(data[3+i4]);
-
+            unpack(w_[r*nb+i], k);
+            x[0] = k[0]^detail::gf.mul2(data[i4]) ^ detail::gf.mul3(data[1+i4]) ^ data[2+i4] ^ data[3+i4];
+            x[1] = k[1]^data[i4] ^ detail::gf.mul2(data[1+i4]) ^ detail::gf.mul3(data[2+i4]) ^ data[3+i4];
+            x[2] = k[2]^data[i4] ^ data[1+i4] ^ detail::gf.mul2(data[2+i4]) ^ detail::gf.mul3(data[3+i4]);
+            x[3] = k[3]^detail::gf.mul3(data[i4]) ^ data[1+i4] ^ data[2+i4] ^ detail::gf.mul2(data[3+i4]);
             std::memcpy(data+i4, x, nb);
         }
     }
