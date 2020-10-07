@@ -165,8 +165,7 @@ struct aes<K, std::enable_if_t<K == 16 || K ==24 || K ==32>> {
     {
         add_roundkey(data, 0);
         enc_round(data, std::make_index_sequence<nr-1>{});
-        sub_bytes_shift_rows(data);
-        add_roundkey(data, nr);
+        enc_final_round(data);
     }
     void inv_cipher(std::uint8_t* data) noexcept
     {
@@ -231,7 +230,6 @@ struct aes<K, std::enable_if_t<K == 16 || K ==24 || K ==32>> {
     {
 
         std::uint8_t buf[block_size];
-        std::uint8_t k[16];
 
         buf[0]  = detail::sbox[data[0]];
         buf[13] = detail::sbox[data[1]];
@@ -250,45 +248,46 @@ struct aes<K, std::enable_if_t<K == 16 || K ==24 || K ==32>> {
         buf[6]  = detail::sbox[data[14]];
         buf[3]  = detail::sbox[data[15]];
 
-        std::memcpy(k, w8_ + nb*nb*r, block_size);
+        std::memcpy(data, w8_ + nb*nb*r, block_size);
 
-        data[0+0]  = k[ 0] ^ detail::gf.mul2(buf[0]) ^ detail::gf.mul3(buf[1+0]) ^ buf[2+0] ^ buf[3+0];
-        data[0+1]  = k[ 1] ^ buf[0] ^ detail::gf.mul2(buf[1+0]) ^ detail::gf.mul3(buf[2+0]) ^ buf[3+0];
-        data[0+2]  = k[ 2] ^ buf[0] ^ buf[1+0] ^ detail::gf.mul2(buf[2+0]) ^ detail::gf.mul3(buf[3+0]);
-        data[0+3]  = k[ 3] ^ detail::gf.mul3(buf[0]) ^ buf[1+0] ^ buf[2+0] ^ detail::gf.mul2(buf[3+0]);
-        data[4+0]  = k[ 4] ^ detail::gf.mul2(buf[4]) ^ detail::gf.mul3(buf[1+4]) ^ buf[2+4] ^ buf[3+4];
-        data[4+1]  = k[ 5] ^ buf[4] ^ detail::gf.mul2(buf[1+4]) ^ detail::gf.mul3(buf[2+4]) ^ buf[3+4];
-        data[4+2]  = k[ 6] ^ buf[4] ^ buf[1+4] ^ detail::gf.mul2(buf[2+4]) ^ detail::gf.mul3(buf[3+4]);
-        data[4+3]  = k[ 7] ^ detail::gf.mul3(buf[4]) ^ buf[1+4] ^ buf[2+4] ^ detail::gf.mul2(buf[3+4]);
-        data[8+0]  = k[ 8] ^ detail::gf.mul2(buf[8]) ^ detail::gf.mul3(buf[1+8]) ^ buf[2+8] ^ buf[3+8];
-        data[8+1]  = k[ 9] ^ buf[8] ^ detail::gf.mul2(buf[1+8]) ^ detail::gf.mul3(buf[2+8]) ^ buf[3+8];
-        data[8+2]  = k[10] ^ buf[8] ^ buf[1+8] ^ detail::gf.mul2(buf[2+8]) ^ detail::gf.mul3(buf[3+8]);
-        data[8+3]  = k[11] ^ detail::gf.mul3(buf[8]) ^ buf[1+8] ^ buf[2+8] ^ detail::gf.mul2(buf[3+8]);
-        data[12+0] = k[12] ^ detail::gf.mul2(buf[12]) ^ detail::gf.mul3(buf[1+12]) ^ buf[2+12] ^ buf[3+12];
-        data[12+1] = k[13] ^ buf[12] ^ detail::gf.mul2(buf[1+12]) ^ detail::gf.mul3(buf[2+12]) ^ buf[3+12];
-        data[12+2] = k[14] ^ buf[12] ^ buf[1+12] ^ detail::gf.mul2(buf[2+12]) ^ detail::gf.mul3(buf[3+12]);
-        data[12+3] = k[15] ^ detail::gf.mul3(buf[12]) ^ buf[1+12] ^ buf[2+12] ^ detail::gf.mul2(buf[3+12]);
+        data[0+0]  ^= detail::gf.mul2(buf[0]) ^ detail::gf.mul3(buf[1+0]) ^ buf[2+0] ^ buf[3+0];
+        data[0+1]  ^= buf[0] ^ detail::gf.mul2(buf[1+0]) ^ detail::gf.mul3(buf[2+0]) ^ buf[3+0];
+        data[0+2]  ^= buf[0] ^ buf[1+0] ^ detail::gf.mul2(buf[2+0]) ^ detail::gf.mul3(buf[3+0]);
+        data[0+3]  ^= detail::gf.mul3(buf[0]) ^ buf[1+0] ^ buf[2+0] ^ detail::gf.mul2(buf[3+0]);
+        data[4+0]  ^= detail::gf.mul2(buf[4]) ^ detail::gf.mul3(buf[1+4]) ^ buf[2+4] ^ buf[3+4];
+        data[4+1]  ^= buf[4] ^ detail::gf.mul2(buf[1+4]) ^ detail::gf.mul3(buf[2+4]) ^ buf[3+4];
+        data[4+2]  ^= buf[4] ^ buf[1+4] ^ detail::gf.mul2(buf[2+4]) ^ detail::gf.mul3(buf[3+4]);
+        data[4+3]  ^= detail::gf.mul3(buf[4]) ^ buf[1+4] ^ buf[2+4] ^ detail::gf.mul2(buf[3+4]);
+        data[8+0]  ^= detail::gf.mul2(buf[8]) ^ detail::gf.mul3(buf[1+8]) ^ buf[2+8] ^ buf[3+8];
+        data[8+1]  ^= buf[8] ^ detail::gf.mul2(buf[1+8]) ^ detail::gf.mul3(buf[2+8]) ^ buf[3+8];
+        data[8+2]  ^= buf[8] ^ buf[1+8] ^ detail::gf.mul2(buf[2+8]) ^ detail::gf.mul3(buf[3+8]);
+        data[8+3]  ^= detail::gf.mul3(buf[8]) ^ buf[1+8] ^ buf[2+8] ^ detail::gf.mul2(buf[3+8]);
+        data[12+0] ^= detail::gf.mul2(buf[12]) ^ detail::gf.mul3(buf[1+12]) ^ buf[2+12] ^ buf[3+12];
+        data[12+1] ^= buf[12] ^ detail::gf.mul2(buf[1+12]) ^ detail::gf.mul3(buf[2+12]) ^ buf[3+12];
+        data[12+2] ^= buf[12] ^ buf[1+12] ^ detail::gf.mul2(buf[2+12]) ^ detail::gf.mul3(buf[3+12]);
+        data[12+3] ^= detail::gf.mul3(buf[12]) ^ buf[1+12] ^ buf[2+12] ^ detail::gf.mul2(buf[3+12]);
     }
-    inline static void sub_bytes_shift_rows(std::uint8_t* data) noexcept
+    inline void enc_final_round(std::uint8_t* data) const noexcept
     {
         std::uint8_t buf[block_size];
         std::memcpy(buf, data, block_size);
-        data[0]  = detail::sbox[buf[0]];
-        data[1]  = detail::sbox[buf[5]];
-        data[2]  = detail::sbox[buf[10]];
-        data[3]  = detail::sbox[buf[15]];
-        data[4]  = detail::sbox[buf[4]];
-        data[5]  = detail::sbox[buf[9]];
-        data[6]  = detail::sbox[buf[14]];
-        data[7]  = detail::sbox[buf[3]];
-        data[8]  = detail::sbox[buf[8]];
-        data[9]  = detail::sbox[buf[13]];
-        data[10] = detail::sbox[buf[2]];
-        data[11] = detail::sbox[buf[7]];
-        data[12] = detail::sbox[buf[12]];
-        data[13] = detail::sbox[buf[1]];
-        data[14] = detail::sbox[buf[6]];
-        data[15] = detail::sbox[buf[11]];
+        std::memcpy(data, w8_+nb*nb*nr, block_size);
+        data[0]  ^= detail::sbox[buf[0]];
+        data[1]  ^= detail::sbox[buf[5]];
+        data[2]  ^= detail::sbox[buf[10]];
+        data[3]  ^= detail::sbox[buf[15]];
+        data[4]  ^= detail::sbox[buf[4]];
+        data[5]  ^= detail::sbox[buf[9]];
+        data[6]  ^= detail::sbox[buf[14]];
+        data[7]  ^= detail::sbox[buf[3]];
+        data[8]  ^= detail::sbox[buf[8]];
+        data[9]  ^= detail::sbox[buf[13]];
+        data[10] ^= detail::sbox[buf[2]];
+        data[11] ^= detail::sbox[buf[7]];
+        data[12] ^= detail::sbox[buf[12]];
+        data[13] ^= detail::sbox[buf[1]];
+        data[14] ^= detail::sbox[buf[6]];
+        data[15] ^= detail::sbox[buf[11]];
     }
     inline static void inv_sub_bytes_shift_rows(std::uint8_t* data) noexcept
     {
@@ -312,21 +311,6 @@ struct aes<K, std::enable_if_t<K == 16 || K ==24 || K ==32>> {
         data[15] = detail::inv_sbox[buf[3]];
     }
 
-    inline void mix_columns_add_roundkey(std::uint8_t* data, unsigned r) const noexcept
-    {
-        std::uint8_t x[4];
-        std::uint8_t k[4];
-        unsigned i4;
-        for (auto i = 0u; i < 4; ++i) {
-            i4 = i << 2;
-            unpack(w_[r*nb+i], k);
-            x[0] = k[0]^detail::gf.mul2(data[i4]) ^ detail::gf.mul3(data[1+i4]) ^ data[2+i4] ^ data[3+i4];
-            x[1] = k[1]^data[i4] ^ detail::gf.mul2(data[1+i4]) ^ detail::gf.mul3(data[2+i4]) ^ data[3+i4];
-            x[2] = k[2]^data[i4] ^ data[1+i4] ^ detail::gf.mul2(data[2+i4]) ^ detail::gf.mul3(data[3+i4]);
-            x[3] = k[3]^detail::gf.mul3(data[i4]) ^ data[1+i4] ^ data[2+i4] ^ detail::gf.mul2(data[3+i4]);
-            std::memcpy(data+i4, x, nb);
-        }
-    }
     inline static void inv_mix_columns(std::uint8_t* data) noexcept
     {
         std::uint8_t x[4];
@@ -346,26 +330,11 @@ struct aes<K, std::enable_if_t<K == 16 || K ==24 || K ==32>> {
 //private:
     inline void add_roundkey(std::uint8_t* data, unsigned r) const noexcept
     {
-        data[ 0] ^= w8_[nb*nb*r+ 0];
-        data[ 1] ^= w8_[nb*nb*r+ 1];
-        data[ 2] ^= w8_[nb*nb*r+ 2];
-        data[ 3] ^= w8_[nb*nb*r+ 3];
-        data[ 4] ^= w8_[nb*nb*r+ 4];
-        data[ 5] ^= w8_[nb*nb*r+ 5];
-        data[ 6] ^= w8_[nb*nb*r+ 6];
-        data[ 7] ^= w8_[nb*nb*r+ 7];
-        data[ 8] ^= w8_[nb*nb*r+ 8];
-        data[ 9] ^= w8_[nb*nb*r+ 9];
-        data[10] ^= w8_[nb*nb*r+10];
-        data[11] ^= w8_[nb*nb*r+11];
-        data[12] ^= w8_[nb*nb*r+12];
-        data[13] ^= w8_[nb*nb*r+13];
-        data[14] ^= w8_[nb*nb*r+14];
-        data[15] ^= w8_[nb*nb*r+15];
-        //unpack(pack<std::uint32_t>(data+0) ^ w_[0 + r * nb], data);
-        //unpack(pack<std::uint32_t>(data+4) ^ w_[1 + r * nb], data+4);
-        //unpack(pack<std::uint32_t>(data+8) ^ w_[2 + r * nb], data+8);
-        //unpack(pack<std::uint32_t>(data+12) ^ w_[3 + r * nb], data+12);
+        auto* dp = reinterpret_cast<std::uint64_t*>(data);
+        auto* kp = reinterpret_cast<const std::uint64_t*>(w8_ + nb*nb*r);
+
+        dp[0] ^= kp[0];
+        dp[1] ^= kp[1];
     }
     std::uint32_t w_[nb*(nr+1)];
     std::uint8_t w8_[nb*nb*(nr+1)];

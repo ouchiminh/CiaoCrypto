@@ -172,7 +172,7 @@ OUCHI_TEST_CASE(aes128_benchmark)
 {
     using namespace std::chrono;
     const char key[16] = {};
-    constexpr int r = 1024 * 4;
+    constexpr int r = 1024 * 8;
     std::vector<std::uint8_t> data(1024*16, 0xc5);
     ciao::aes<16> encoder{ key };
     auto beg = std::chrono::steady_clock::now();
