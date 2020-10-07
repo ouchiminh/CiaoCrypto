@@ -14,7 +14,7 @@ OUCHI_TEST_CASE(aes128_key_expansion){
         0x09, 0xcf, 0x4f, 0x3c
     };
     ciao::aes<16> encoder;
-    encoder.expand_key(key);
+    encoder.key_expansion(key);
 
     OUCHI_CHECK_EQUAL(encoder.w_[0], 0x2b7e1516);
     OUCHI_CHECK_EQUAL(encoder.w_[4], 0xa0fafe17);
@@ -31,7 +31,7 @@ OUCHI_TEST_CASE(aes192_key_expansion){
         0x52, 0x2c, 0x6b, 0x7b
     };
     ciao::aes<24> encoder;
-    encoder.expand_key(key);
+    encoder.key_expansion(key);
 
     OUCHI_CHECK_EQUAL(encoder.w_[51], 0x01002202);
 }
@@ -48,7 +48,7 @@ OUCHI_TEST_CASE(aes256_key_expansion){
         0x09, 0x14, 0xdf, 0xf4
     };
     ciao::aes<32> encoder;
-    encoder.expand_key(key);
+    encoder.key_expansion(key);
 
     OUCHI_CHECK_EQUAL(encoder.w_[59], 0x706c631e);
 }
@@ -175,14 +175,26 @@ OUCHI_TEST_CASE(aes128_benchmark)
     constexpr int r = 1024 * 8;
     std::vector<std::uint8_t> data(1024*16, 0xc5);
     ciao::aes<16> encoder{ key };
-    auto beg = std::chrono::steady_clock::now();
-    for (auto k = 0ull; k < r; ++k) {
-        for (auto i = 0ull; i < data.size(); i += 16)
-            encoder.cipher(data.data() + i);
-    }
+    {
+        auto beg = std::chrono::steady_clock::now();
+        for (auto k = 0ull; k < r; ++k) {
+            for (auto i = 0ull; i < data.size(); i += 16)
+                encoder.cipher(data.data() + i);
+        }
 
-    duration<double, std::ratio<1, 1>> dur = std::chrono::steady_clock::now() - beg;
-    std::cout << "aes-128 ecb " <<  data.size()*r / dur.count() / 1000 << " k\n";
+        duration<double, std::ratio<1, 1>> dur = std::chrono::steady_clock::now() - beg;
+        std::cout << "aes-128 ecb enc " <<  data.size()*r / dur.count() / 1000 << " k\n";
+    }
+    {
+        auto beg = std::chrono::steady_clock::now();
+        for (auto k = 0ull; k < r; ++k) {
+            for (auto i = 0ull; i < data.size(); i += 16)
+                encoder.inv_cipher(data.data() + i);
+        }
+
+        duration<double, std::ratio<1, 1>> dur = std::chrono::steady_clock::now() - beg;
+        std::cout << "aes-128 ecb dec " <<  data.size()*r / dur.count() / 1000 << " k\n";
+    }
 
 }
 OUCHI_TEST_CASE(aesni128_benchmark)
@@ -192,14 +204,26 @@ OUCHI_TEST_CASE(aesni128_benchmark)
     constexpr auto r = 1024*1024;
     std::vector<std::uint8_t> data(1024*16, 0xc5);
     ciao::aes_ni<16> encoder{ key };
-    auto beg = std::chrono::steady_clock::now();
-    for (auto k = 0ull; k < r; ++k) {
-        for (auto i = 0ull; i < data.size(); i += 16)
-            encoder.cipher(data.data() + i);
-    }
+    {
+        auto beg = std::chrono::steady_clock::now();
+        for (auto k = 0ull; k < r; ++k) {
+            for (auto i = 0ull; i < data.size(); i += 16)
+                encoder.cipher(data.data() + i);
+        }
 
-    duration<double, std::ratio<1, 1>> dur = std::chrono::steady_clock::now() - beg;
-    std::cout << "aesni-128 ecb " <<  data.size()*r / dur.count() / 1000'000 << " M\n";
+        duration<double, std::ratio<1, 1>> dur = std::chrono::steady_clock::now() - beg;
+        std::cout << "aesni-128 ecb enc " <<  data.size()*r / dur.count() / 1000'000 << " M\n";
+    }
+    {
+        auto beg = std::chrono::steady_clock::now();
+        for (auto k = 0ull; k < r; ++k) {
+            for (auto i = 0ull; i < data.size(); i += 16)
+                encoder.inv_cipher(data.data() + i);
+        }
+
+        duration<double, std::ratio<1, 1>> dur = std::chrono::steady_clock::now() - beg;
+        std::cout << "aesni-128 ecb dec " <<  data.size()*r / dur.count() / 1000'000 << " M\n";
+    }
 }
 #endif
 

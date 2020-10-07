@@ -25,7 +25,7 @@ struct aes_ni<K, std::enable_if_t<K == 16 || K ==24 || K ==32>> : private aes<K>
     aes_ni() = default;
     aes_ni(const void* key) noexcept
     {
-        expand_key(key);
+        key_expansion(key);
     }
     ~aes_ni()
     {
@@ -34,9 +34,9 @@ struct aes_ni<K, std::enable_if_t<K == 16 || K ==24 || K ==32>> : private aes<K>
         std::fill(dw128_, dw128_ + nr + 1, zero);
     }
 
-    void expand_key(const void* key) noexcept
+    void key_expansion(const void* key) noexcept
     {
-        aes<K>::expand_key(key);
+        aes<K>::key_expansion(key);
         for (auto i = 0u; i < nr+1; ++i) {
             alignas(16) std::uint8_t tmp[16];
             unpack(aes<K>::w_[i*4], tmp);

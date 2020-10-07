@@ -61,47 +61,43 @@ inline constexpr inv_sbox_t inv_sbox;
 
 struct gf_mul {
     using gf = ouchi::math::gf256<0x1b>;
-    std::uint8_t datae[256];
-    std::uint8_t data9[256];
-    std::uint8_t datad[256];
-    std::uint8_t datab[256];
-    std::uint8_t data2[256];
-    std::uint8_t data3[256];
-    constexpr gf_mul()
-        : datae{}
-        , data9{}
-        , datad{}
-        , datab{}
-        , data2{}
-        , data3{}
+    std::uint32_t data2113[256];
+    std::uint32_t data3211[256];
+    std::uint32_t data1321[256];
+    std::uint32_t data1132[256];
+    std::uint32_t datae9db[256];
+    std::uint32_t databe9d[256];
+    std::uint32_t datadbe9[256];
+    std::uint32_t data9dbe[256];
+    gf_mul()
     {
         for (int i = 0; i < 256; ++i) {
-            data2[i] = gf::xmul(i);
-            datae[i] = gf::mul(i, 0x0e);
-            data9[i] = gf::mul(i, 0x09);
-            datad[i] = gf::mul(i, 0x0d);
-            datab[i] = gf::mul(i, 0x0b);
-            data3[i] = gf::mul(i, 0x03);
+            std::uint8_t a = gf::mul(i, 2), b = gf::mul(i, 3),
+                d9 = gf::mul(i, 9), db = gf::mul(i, 0xb), dd = gf::mul(i, 0xd), de = gf::mul(i, 0xe);
+            data2113[i] = pack32(a, i, i, b);
+            data3211[i] = pack32(b, a, i, i);
+            data1321[i] = pack32(i, b, a, i);
+            data1132[i] = pack32(i, i, b, a);
+            datae9db[i] = pack32(de, d9, dd, db);
+            databe9d[i] = pack32(db, de, d9, dd);
+            datadbe9[i] = pack32(dd, db, de, d9);
+            data9dbe[i] = pack32(d9, dd, db, de);
         }
     }
-    constexpr std::uint8_t mul(std::uint8_t a, std::uint8_t b) const noexcept
-    {
-        std::uint8_t res{};
-        while (a) {
-            res ^= (a & 1 ? b : 0);
-            b = data2[b];
-            a >>= 1;
-        }
-        return res;
-    }
-    constexpr std::uint8_t mul2(std::uint8_t a) const noexcept { return data2[a]; }
-    constexpr std::uint8_t mul9(std::uint8_t a) const noexcept { return data9[a]; }
-    constexpr std::uint8_t muld(std::uint8_t a) const noexcept { return datad[a]; }
-    constexpr std::uint8_t mulb(std::uint8_t a) const noexcept { return datab[a]; }
-    constexpr std::uint8_t mule(std::uint8_t a) const noexcept { return datae[a]; }
-    constexpr std::uint8_t mul3(std::uint8_t a) const noexcept { return data3[a]; }
 };
-inline constexpr gf_mul gf;
+inline gf_mul gf;
+
+template<class T, size_t S>
+auto prefetch(const T(&table)[S]) noexcept
+-> std::enable_if_t<S % sizeof(std::uint64_t) == 0, void>
+{
+    const volatile std::uint64_t* t = reinterpret_cast<const volatile std::uint64_t*>(&*table);
+    volatile std::uint64_t ret;
+    std::uint64_t sum;
+    for (size_t i = 0; i < S * sizeof(T) / sizeof(std::uint64_t); ++i)
+        sum ^= t[i];
+    ret = sum;
+}
 
 } // namespace detail;
 
@@ -123,16 +119,19 @@ struct aes<K, std::enable_if_t<K == 16 || K ==24 || K ==32>> {
     aes() noexcept = default;
     aes(const void* key) noexcept
     {
-        expand_key(key);
+        key_expansion(key);
     }
     ~aes()
     {
         std::fill(const_cast<volatile std::uint32_t*>(w_),
                   const_cast<volatile std::uint32_t*>(w_+sizeof(w_)/sizeof(*w_)),
                   0u);
+        std::fill(const_cast<volatile std::uint8_t*>(w8_),
+                  const_cast<volatile std::uint8_t*>(w8_+sizeof(w8_)/sizeof(*w8_)),
+                  0u);
     }
 
-    void expand_key(const void* key) noexcept
+    void key_expansion(const void* key) noexcept
     {
         unsigned i = 0;
         while (i < nk) {
@@ -226,11 +225,10 @@ struct aes<K, std::enable_if_t<K == 16 || K ==24 || K ==32>> {
     {
         (enc_round(data, S+1), ...);
     }
-    inline void enc_round(std::uint8_t* data, size_t r) noexcept
+    inline void enc_round(std::uint8_t* data, size_t r) const noexcept
     {
-
         std::uint8_t buf[block_size];
-
+        std::uint32_t* p = reinterpret_cast<std::uint32_t*>(data);
         buf[0]  = detail::sbox[data[0]];
         buf[13] = detail::sbox[data[1]];
         buf[10] = detail::sbox[data[2]];
@@ -247,25 +245,11 @@ struct aes<K, std::enable_if_t<K == 16 || K ==24 || K ==32>> {
         buf[9]  = detail::sbox[data[13]];
         buf[6]  = detail::sbox[data[14]];
         buf[3]  = detail::sbox[data[15]];
-
         std::memcpy(data, w8_ + nb*nb*r, block_size);
-
-        data[0+0]  ^= detail::gf.mul2(buf[0]) ^ detail::gf.mul3(buf[1+0]) ^ buf[2+0] ^ buf[3+0];
-        data[0+1]  ^= buf[0] ^ detail::gf.mul2(buf[1+0]) ^ detail::gf.mul3(buf[2+0]) ^ buf[3+0];
-        data[0+2]  ^= buf[0] ^ buf[1+0] ^ detail::gf.mul2(buf[2+0]) ^ detail::gf.mul3(buf[3+0]);
-        data[0+3]  ^= detail::gf.mul3(buf[0]) ^ buf[1+0] ^ buf[2+0] ^ detail::gf.mul2(buf[3+0]);
-        data[4+0]  ^= detail::gf.mul2(buf[4]) ^ detail::gf.mul3(buf[1+4]) ^ buf[2+4] ^ buf[3+4];
-        data[4+1]  ^= buf[4] ^ detail::gf.mul2(buf[1+4]) ^ detail::gf.mul3(buf[2+4]) ^ buf[3+4];
-        data[4+2]  ^= buf[4] ^ buf[1+4] ^ detail::gf.mul2(buf[2+4]) ^ detail::gf.mul3(buf[3+4]);
-        data[4+3]  ^= detail::gf.mul3(buf[4]) ^ buf[1+4] ^ buf[2+4] ^ detail::gf.mul2(buf[3+4]);
-        data[8+0]  ^= detail::gf.mul2(buf[8]) ^ detail::gf.mul3(buf[1+8]) ^ buf[2+8] ^ buf[3+8];
-        data[8+1]  ^= buf[8] ^ detail::gf.mul2(buf[1+8]) ^ detail::gf.mul3(buf[2+8]) ^ buf[3+8];
-        data[8+2]  ^= buf[8] ^ buf[1+8] ^ detail::gf.mul2(buf[2+8]) ^ detail::gf.mul3(buf[3+8]);
-        data[8+3]  ^= detail::gf.mul3(buf[8]) ^ buf[1+8] ^ buf[2+8] ^ detail::gf.mul2(buf[3+8]);
-        data[12+0] ^= detail::gf.mul2(buf[12]) ^ detail::gf.mul3(buf[1+12]) ^ buf[2+12] ^ buf[3+12];
-        data[12+1] ^= buf[12] ^ detail::gf.mul2(buf[1+12]) ^ detail::gf.mul3(buf[2+12]) ^ buf[3+12];
-        data[12+2] ^= buf[12] ^ buf[1+12] ^ detail::gf.mul2(buf[2+12]) ^ detail::gf.mul3(buf[3+12]);
-        data[12+3] ^= detail::gf.mul3(buf[12]) ^ buf[1+12] ^ buf[2+12] ^ detail::gf.mul2(buf[3+12]);
+        p[0] ^= detail::gf.data2113[buf[0]] ^ detail::gf.data3211[buf[1]] ^ detail::gf.data1321[buf[2]] ^ detail::gf.data1132[buf[3]];
+        p[1] ^= detail::gf.data2113[buf[4]] ^ detail::gf.data3211[buf[5]] ^ detail::gf.data1321[buf[6]] ^ detail::gf.data1132[buf[7]];
+        p[2] ^= detail::gf.data2113[buf[8]] ^ detail::gf.data3211[buf[9]] ^ detail::gf.data1321[buf[10]] ^ detail::gf.data1132[buf[11]];
+        p[3] ^= detail::gf.data2113[buf[12]] ^ detail::gf.data3211[buf[13]] ^ detail::gf.data1321[buf[14]] ^ detail::gf.data1132[buf[15]];
     }
     inline void enc_final_round(std::uint8_t* data) const noexcept
     {
@@ -313,17 +297,12 @@ struct aes<K, std::enable_if_t<K == 16 || K ==24 || K ==32>> {
 
     inline static void inv_mix_columns(std::uint8_t* data) noexcept
     {
-        std::uint8_t x[4];
         unsigned i4;
+        auto* p = reinterpret_cast<std::uint32_t*>(data);
 
         for (auto i = 0u; i < 4; ++i) {
             i4 = i << 2;
-            x[0] = detail::gf.mule(data[i4]) ^ detail::gf.mulb(data[1+i4]) ^ detail::gf.muld(data[2+i4]) ^ detail::gf.mul9(data[3+i4]);
-            x[1] = detail::gf.mul9(data[i4]) ^ detail::gf.mule(data[1+i4]) ^ detail::gf.mulb(data[2+i4]) ^ detail::gf.muld(data[3+i4]);
-            x[2] = detail::gf.muld(data[i4]) ^ detail::gf.mul9(data[1+i4]) ^ detail::gf.mule(data[2+i4]) ^ detail::gf.mulb(data[3+i4]);
-            x[3] = detail::gf.mulb(data[i4]) ^ detail::gf.muld(data[1+i4]) ^ detail::gf.mul9(data[2+i4]) ^ detail::gf.mule(data[3+i4]);
-
-            std::memcpy(data+i4, x, nb);
+            p[i] = detail::gf.datae9db[data[i4]] ^ detail::gf.databe9d[data[i4+1]] ^ detail::gf.datadbe9[data[i4+2]] ^ detail::gf.data9dbe[data[i4+3]];
         }
     }
 

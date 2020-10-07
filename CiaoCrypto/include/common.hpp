@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include <type_traits>
+#include <cstdint>
 
 namespace ciao {
 template<class Int>
@@ -44,6 +45,22 @@ inline constexpr auto pack(const void* src) noexcept
 {
     return detail::pack_impl<Int>(reinterpret_cast<const std::uint8_t*>(src),
                                   std::make_index_sequence<sizeof(Int)>{});
+}
+
+inline std::uint32_t pack32(std::uint8_t a,
+                                      std::uint8_t b,
+                                      std::uint8_t c,
+                                      std::uint8_t d)
+{
+    union { 
+        std::uint8_t b[4];
+        std::uint32_t i;
+    } r;
+    r.b[0] = a;
+    r.b[1] = b;
+    r.b[2] = c;
+    r.b[3] = d;
+    return r.i;
 }
 
 }
