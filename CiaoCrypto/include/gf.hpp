@@ -4,7 +4,7 @@
 #include <limits>
 #include <tuple>
 
-namespace ouchi::math {
+namespace ciao {
 
 /// <summary>
 /// 拡張ユークリッド互除法 

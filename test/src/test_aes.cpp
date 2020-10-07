@@ -171,15 +171,16 @@ OUCHI_TEST_CASE(aesni256_cipher)
 OUCHI_TEST_CASE(aes128_benchmark)
 {
     using namespace std::chrono;
-    const char key[16] = {};
+    const char key[] = "\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f";
     constexpr int r = 1024 * 8;
-    std::vector<std::uint8_t> data(1024*16, 0xc5);
+    std::vector<std::uint8_t> data(16 * 1024, 0xc5);
     ciao::aes<16> encoder{ key };
     {
         auto beg = std::chrono::steady_clock::now();
         for (auto k = 0ull; k < r; ++k) {
-            for (auto i = 0ull; i < data.size(); i += 16)
+            for (auto i = 0ull; i < data.size(); i += 16) {
                 encoder.cipher(data.data() + i);
+            }
         }
 
         duration<double, std::ratio<1, 1>> dur = std::chrono::steady_clock::now() - beg;
@@ -200,7 +201,7 @@ OUCHI_TEST_CASE(aes128_benchmark)
 OUCHI_TEST_CASE(aesni128_benchmark)
 {
     using namespace std::chrono;
-    const char key[16] = {};
+    const char key[] = "\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f";
     constexpr auto r = 1024*1024;
     std::vector<std::uint8_t> data(1024*16, 0xc5);
     ciao::aes_ni<16> encoder{ key };

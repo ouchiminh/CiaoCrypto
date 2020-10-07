@@ -60,7 +60,7 @@ inline constexpr sbox_t sbox;
 inline constexpr inv_sbox_t inv_sbox;
 
 struct gf_mul {
-    using gf = ouchi::math::gf256<0x1b>;
+    using gf = ciao::gf256<0x1b>;
     std::uint32_t data2113[256];
     std::uint32_t data3211[256];
     std::uint32_t data1321[256];
@@ -221,7 +221,7 @@ struct aes<K, std::enable_if_t<K == 16 || K ==24 || K ==32>> {
         return rotl(i, 8);
     }
     template<size_t ...S>
-    inline void enc_round(std::uint8_t* data, std::index_sequence<S...>)
+    inline void enc_round(std::uint8_t* data, std::index_sequence<S...>) const noexcept
     {
         (enc_round(data, S+1), ...);
     }
