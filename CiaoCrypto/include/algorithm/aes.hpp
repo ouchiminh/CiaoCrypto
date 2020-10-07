@@ -8,6 +8,8 @@
 #include <cstddef>
 #include <utility>
 
+#include <intrin.h>
+
 namespace ciao {
 
 namespace detail {
@@ -56,8 +58,8 @@ struct inv_sbox_t {
     constexpr std::uint8_t operator[](int i) const noexcept { return data[i]; }
 };
 
-constexpr sbox_t sbox;
-constexpr inv_sbox_t inv_sbox;
+inline constexpr sbox_t sbox;
+inline constexpr inv_sbox_t inv_sbox;
 
 struct gf_mul {
     std::uint8_t data[256];
@@ -160,15 +162,14 @@ struct aes<K, std::enable_if_t<K == 16 || K ==24 || K ==32>> {
                 w_[i+7] = w_[i+7-nk] ^ w_[i+7-1];
             }
         }
+        for (i = 0; i < sizeof(w_)/sizeof(*w_); ++i) {
+            unpack(w_[i], w8_+i*nb);
+        }
     }
     void cipher(std::uint8_t* data) noexcept
     {
         add_roundkey(data, 0);
-        for (auto i = 1u; i < nr; ++i) {
-            //sub_bytes_shift_rows(data);
-            //mix_columns_add_roundkey(data, i);
-            encode_round(data, i);
-        }
+        enc_round(data, std::make_index_sequence<nr-1>{});
         sub_bytes_shift_rows(data);
         add_roundkey(data, nr);
     }
@@ -226,10 +227,16 @@ struct aes<K, std::enable_if_t<K == 16 || K ==24 || K ==32>> {
     {
         return rotl(i, 8);
     }
-    inline void encode_round(std::uint8_t* data, unsigned r) noexcept
+    template<size_t ...S>
+    inline void enc_round(std::uint8_t* data, std::index_sequence<S...>)
+    {
+        (enc_round(data, S+1), ...);
+    }
+    inline void enc_round(std::uint8_t* data, size_t r) noexcept
     {
 
         std::uint8_t buf[block_size];
+        std::uint8_t k[16];
         buf[0]  = detail::sbox[data[0]];
         buf[13] = detail::sbox[data[1]];
         buf[10] = detail::sbox[data[2]];
@@ -246,17 +253,6 @@ struct aes<K, std::enable_if_t<K == 16 || K ==24 || K ==32>> {
         buf[9]  = detail::sbox[data[13]];
         buf[6]  = detail::sbox[data[14]];
         buf[3]  = detail::sbox[data[15]];
-        std::uint8_t k[16];
-        //unsigned i4;
-        //for (auto i = 0u; i < 4; ++i) {
-        //    i4 = i << 2;
-
-        //    unpack(w_[r*nb+i], k);
-        //    data[i4+0] = k[0]^detail::gf.mul2(buf[i4]) ^ detail::gf.mul3(buf[1+i4]) ^ buf[2+i4] ^ buf[3+i4];
-        //    data[i4+1] = k[1]^buf[i4] ^ detail::gf.mul2(buf[1+i4]) ^ detail::gf.mul3(buf[2+i4]) ^ buf[3+i4];
-        //    data[i4+2] = k[2]^buf[i4] ^ buf[1+i4] ^ detail::gf.mul2(buf[2+i4]) ^ detail::gf.mul3(buf[3+i4]);
-        //    data[i4+3] = k[3]^detail::gf.mul3(buf[i4]) ^ buf[1+i4] ^ buf[2+i4] ^ detail::gf.mul2(buf[3+i4]);
-        //}
         unpack(w_[r*nb+0], k);
         unpack(w_[r*nb+1], k+4);
         unpack(w_[r*nb+2], k+8);
@@ -355,12 +351,17 @@ struct aes<K, std::enable_if_t<K == 16 || K ==24 || K ==32>> {
 //private:
     inline void add_roundkey(std::uint8_t* data, unsigned r) const noexcept
     {
-        unpack(pack<std::uint32_t>(data+0) ^ w_[0 + r * nb], data);
-        unpack(pack<std::uint32_t>(data+4) ^ w_[1 + r * nb], data+4);
-        unpack(pack<std::uint32_t>(data+8) ^ w_[2 + r * nb], data+8);
-        unpack(pack<std::uint32_t>(data+12) ^ w_[3 + r * nb], data+12);
+        _mm_storeu_si128((__m128i*)data,
+                         _mm_xor_si128(_mm_loadu_si128((__m128i*)(w8_ + r * nb * nb)),
+                                       _mm_loadu_si128((__m128i*)data)));
+
+        //unpack(pack<std::uint32_t>(data+0) ^ w_[0 + r * nb], data);
+        //unpack(pack<std::uint32_t>(data+4) ^ w_[1 + r * nb], data+4);
+        //unpack(pack<std::uint32_t>(data+8) ^ w_[2 + r * nb], data+8);
+        //unpack(pack<std::uint32_t>(data+12) ^ w_[3 + r * nb], data+12);
     }
     std::uint32_t w_[nb*(nr+1)];
+    std::uint8_t w8_[nb*nb*(nr+1)];
 };
 
 }
