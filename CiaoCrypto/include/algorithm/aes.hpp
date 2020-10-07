@@ -8,8 +8,6 @@
 #include <cstddef>
 #include <utility>
 
-#include <intrin.h>
-
 namespace ciao {
 
 namespace detail {
@@ -62,7 +60,7 @@ inline constexpr sbox_t sbox;
 inline constexpr inv_sbox_t inv_sbox;
 
 struct gf_mul {
-    std::uint8_t data[256];
+    using gf = ouchi::math::gf256<0x1b>;
     std::uint8_t datae[256];
     std::uint8_t data9[256];
     std::uint8_t datad[256];
@@ -70,22 +68,19 @@ struct gf_mul {
     std::uint8_t data2[256];
     std::uint8_t data3[256];
     constexpr gf_mul()
-        : data{}
-        , datae{}
+        : datae{}
         , data9{}
         , datad{}
         , datab{}
         , data2{}
         , data3{}
     {
-        using gf = ouchi::math::gf256<0x1b>;
         for (int i = 0; i < 256; ++i) {
-            data[i] = gf::xmul(i);
+            data2[i] = gf::xmul(i);
             datae[i] = gf::mul(i, 0x0e);
             data9[i] = gf::mul(i, 0x09);
             datad[i] = gf::mul(i, 0x0d);
             datab[i] = gf::mul(i, 0x0b);
-            data2[i] = gf::mul(i, 0x02);
             data3[i] = gf::mul(i, 0x03);
         }
     }
@@ -94,7 +89,7 @@ struct gf_mul {
         std::uint8_t res{};
         while (a) {
             res ^= (a & 1 ? b : 0);
-            b = data[b];
+            b = data2[b];
             a >>= 1;
         }
         return res;
@@ -237,6 +232,7 @@ struct aes<K, std::enable_if_t<K == 16 || K ==24 || K ==32>> {
 
         std::uint8_t buf[block_size];
         std::uint8_t k[16];
+
         buf[0]  = detail::sbox[data[0]];
         buf[13] = detail::sbox[data[1]];
         buf[10] = detail::sbox[data[2]];
@@ -256,22 +252,22 @@ struct aes<K, std::enable_if_t<K == 16 || K ==24 || K ==32>> {
 
         std::memcpy(k, w8_ + nb*nb*r, block_size);
 
-        data[0+0]  = k[ 0]^detail::gf.mul2(buf[0]) ^ detail::gf.mul3(buf[1+0]) ^ buf[2+0] ^ buf[3+0];
-        data[0+1]  = k[ 1]^buf[0] ^ detail::gf.mul2(buf[1+0]) ^ detail::gf.mul3(buf[2+0]) ^ buf[3+0];
-        data[0+2]  = k[ 2]^buf[0] ^ buf[1+0] ^ detail::gf.mul2(buf[2+0]) ^ detail::gf.mul3(buf[3+0]);
-        data[0+3]  = k[ 3]^detail::gf.mul3(buf[0]) ^ buf[1+0] ^ buf[2+0] ^ detail::gf.mul2(buf[3+0]);
-        data[4+0]  = k[ 4]^detail::gf.mul2(buf[4]) ^ detail::gf.mul3(buf[1+4]) ^ buf[2+4] ^ buf[3+4];
-        data[4+1]  = k[ 5]^buf[4] ^ detail::gf.mul2(buf[1+4]) ^ detail::gf.mul3(buf[2+4]) ^ buf[3+4];
-        data[4+2]  = k[ 6]^buf[4] ^ buf[1+4] ^ detail::gf.mul2(buf[2+4]) ^ detail::gf.mul3(buf[3+4]);
-        data[4+3]  = k[ 7]^detail::gf.mul3(buf[4]) ^ buf[1+4] ^ buf[2+4] ^ detail::gf.mul2(buf[3+4]);
-        data[8+0]  = k[ 8]^detail::gf.mul2(buf[8]) ^ detail::gf.mul3(buf[1+8]) ^ buf[2+8] ^ buf[3+8];
-        data[8+1]  = k[ 9]^buf[8] ^ detail::gf.mul2(buf[1+8]) ^ detail::gf.mul3(buf[2+8]) ^ buf[3+8];
-        data[8+2]  = k[10]^buf[8] ^ buf[1+8] ^ detail::gf.mul2(buf[2+8]) ^ detail::gf.mul3(buf[3+8]);
-        data[8+3]  = k[11]^detail::gf.mul3(buf[8]) ^ buf[1+8] ^ buf[2+8] ^ detail::gf.mul2(buf[3+8]);
-        data[12+0] = k[12]^detail::gf.mul2(buf[12]) ^ detail::gf.mul3(buf[1+12]) ^ buf[2+12] ^ buf[3+12];
-        data[12+1] = k[13]^buf[12] ^ detail::gf.mul2(buf[1+12]) ^ detail::gf.mul3(buf[2+12]) ^ buf[3+12];
-        data[12+2] = k[14]^buf[12] ^ buf[1+12] ^ detail::gf.mul2(buf[2+12]) ^ detail::gf.mul3(buf[3+12]);
-        data[12+3] = k[15]^detail::gf.mul3(buf[12]) ^ buf[1+12] ^ buf[2+12] ^ detail::gf.mul2(buf[3+12]);
+        data[0+0]  = k[ 0] ^ detail::gf.mul2(buf[0]) ^ detail::gf.mul3(buf[1+0]) ^ buf[2+0] ^ buf[3+0];
+        data[0+1]  = k[ 1] ^ buf[0] ^ detail::gf.mul2(buf[1+0]) ^ detail::gf.mul3(buf[2+0]) ^ buf[3+0];
+        data[0+2]  = k[ 2] ^ buf[0] ^ buf[1+0] ^ detail::gf.mul2(buf[2+0]) ^ detail::gf.mul3(buf[3+0]);
+        data[0+3]  = k[ 3] ^ detail::gf.mul3(buf[0]) ^ buf[1+0] ^ buf[2+0] ^ detail::gf.mul2(buf[3+0]);
+        data[4+0]  = k[ 4] ^ detail::gf.mul2(buf[4]) ^ detail::gf.mul3(buf[1+4]) ^ buf[2+4] ^ buf[3+4];
+        data[4+1]  = k[ 5] ^ buf[4] ^ detail::gf.mul2(buf[1+4]) ^ detail::gf.mul3(buf[2+4]) ^ buf[3+4];
+        data[4+2]  = k[ 6] ^ buf[4] ^ buf[1+4] ^ detail::gf.mul2(buf[2+4]) ^ detail::gf.mul3(buf[3+4]);
+        data[4+3]  = k[ 7] ^ detail::gf.mul3(buf[4]) ^ buf[1+4] ^ buf[2+4] ^ detail::gf.mul2(buf[3+4]);
+        data[8+0]  = k[ 8] ^ detail::gf.mul2(buf[8]) ^ detail::gf.mul3(buf[1+8]) ^ buf[2+8] ^ buf[3+8];
+        data[8+1]  = k[ 9] ^ buf[8] ^ detail::gf.mul2(buf[1+8]) ^ detail::gf.mul3(buf[2+8]) ^ buf[3+8];
+        data[8+2]  = k[10] ^ buf[8] ^ buf[1+8] ^ detail::gf.mul2(buf[2+8]) ^ detail::gf.mul3(buf[3+8]);
+        data[8+3]  = k[11] ^ detail::gf.mul3(buf[8]) ^ buf[1+8] ^ buf[2+8] ^ detail::gf.mul2(buf[3+8]);
+        data[12+0] = k[12] ^ detail::gf.mul2(buf[12]) ^ detail::gf.mul3(buf[1+12]) ^ buf[2+12] ^ buf[3+12];
+        data[12+1] = k[13] ^ buf[12] ^ detail::gf.mul2(buf[1+12]) ^ detail::gf.mul3(buf[2+12]) ^ buf[3+12];
+        data[12+2] = k[14] ^ buf[12] ^ buf[1+12] ^ detail::gf.mul2(buf[2+12]) ^ detail::gf.mul3(buf[3+12]);
+        data[12+3] = k[15] ^ detail::gf.mul3(buf[12]) ^ buf[1+12] ^ buf[2+12] ^ detail::gf.mul2(buf[3+12]);
     }
     inline static void sub_bytes_shift_rows(std::uint8_t* data) noexcept
     {
@@ -350,10 +346,22 @@ struct aes<K, std::enable_if_t<K == 16 || K ==24 || K ==32>> {
 //private:
     inline void add_roundkey(std::uint8_t* data, unsigned r) const noexcept
     {
-        _mm_storeu_si128((__m128i*)data,
-                         _mm_xor_si128(_mm_loadu_si128((__m128i*)(w8_ + r * nb * nb)),
-                                       _mm_loadu_si128((__m128i*)data)));
-
+        data[ 0] ^= w8_[nb*nb*r+ 0];
+        data[ 1] ^= w8_[nb*nb*r+ 1];
+        data[ 2] ^= w8_[nb*nb*r+ 2];
+        data[ 3] ^= w8_[nb*nb*r+ 3];
+        data[ 4] ^= w8_[nb*nb*r+ 4];
+        data[ 5] ^= w8_[nb*nb*r+ 5];
+        data[ 6] ^= w8_[nb*nb*r+ 6];
+        data[ 7] ^= w8_[nb*nb*r+ 7];
+        data[ 8] ^= w8_[nb*nb*r+ 8];
+        data[ 9] ^= w8_[nb*nb*r+ 9];
+        data[10] ^= w8_[nb*nb*r+10];
+        data[11] ^= w8_[nb*nb*r+11];
+        data[12] ^= w8_[nb*nb*r+12];
+        data[13] ^= w8_[nb*nb*r+13];
+        data[14] ^= w8_[nb*nb*r+14];
+        data[15] ^= w8_[nb*nb*r+15];
         //unpack(pack<std::uint32_t>(data+0) ^ w_[0 + r * nb], data);
         //unpack(pack<std::uint32_t>(data+4) ^ w_[1 + r * nb], data+4);
         //unpack(pack<std::uint32_t>(data+8) ^ w_[2 + r * nb], data+8);

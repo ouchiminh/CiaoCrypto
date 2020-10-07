@@ -172,7 +172,7 @@ OUCHI_TEST_CASE(aes128_benchmark)
 {
     using namespace std::chrono;
     const char key[16] = {};
-    constexpr int r = 1024 * 2;
+    constexpr int r = 1024 * 4;
     std::vector<std::uint8_t> data(1024*16, 0xc5);
     ciao::aes<16> encoder{ key };
     auto beg = std::chrono::steady_clock::now();
@@ -182,7 +182,7 @@ OUCHI_TEST_CASE(aes128_benchmark)
     }
 
     duration<double, std::ratio<1, 1>> dur = std::chrono::steady_clock::now() - beg;
-    std::cout << "aes-128 cbc " <<  data.size()*r / dur.count() / 1000 << " k\n";
+    std::cout << "aes-128 ecb " <<  data.size()*r / dur.count() / 1000 << " k\n";
 
 }
 OUCHI_TEST_CASE(aesni128_benchmark)
@@ -199,8 +199,7 @@ OUCHI_TEST_CASE(aesni128_benchmark)
     }
 
     duration<double, std::ratio<1, 1>> dur = std::chrono::steady_clock::now() - beg;
-    std::cout << "aes-128 cbc " <<  data.size()*r / dur.count() / 1000'000 << " M\n";
-
+    std::cout << "aesni-128 ecb " <<  data.size()*r / dur.count() / 1000'000 << " M\n";
 }
 #endif
 
