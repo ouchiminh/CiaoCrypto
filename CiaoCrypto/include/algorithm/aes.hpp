@@ -165,8 +165,9 @@ struct aes<K, std::enable_if_t<K == 16 || K ==24 || K ==32>> {
     {
         add_roundkey(data, 0);
         for (auto i = 1u; i < nr; ++i) {
-            sub_bytes_shift_rows(data);
-            mix_columns_add_roundkey(data, i);
+            //sub_bytes_shift_rows(data);
+            //mix_columns_add_roundkey(data, i);
+            encode_round(data, i);
         }
         sub_bytes_shift_rows(data);
         add_roundkey(data, nr);
@@ -225,6 +226,38 @@ struct aes<K, std::enable_if_t<K == 16 || K ==24 || K ==32>> {
     {
         return rotl(i, 8);
     }
+    inline void encode_round(std::uint8_t* data, unsigned r) noexcept
+    {
+
+        std::uint8_t buf[block_size];
+        buf[0]  = detail::sbox[data[0]];
+        buf[13] = detail::sbox[data[1]];
+        buf[10] = detail::sbox[data[2]];
+        buf[7]  = detail::sbox[data[3]];
+        buf[4]  = detail::sbox[data[4]];
+        buf[1]  = detail::sbox[data[5]];
+        buf[14] = detail::sbox[data[6]];
+        buf[11] = detail::sbox[data[7]];
+        buf[8]  = detail::sbox[data[8]];
+        buf[5]  = detail::sbox[data[9]];
+        buf[2]  = detail::sbox[data[10]];
+        buf[15] = detail::sbox[data[11]];
+        buf[12] = detail::sbox[data[12]];
+        buf[9]  = detail::sbox[data[13]];
+        buf[6]  = detail::sbox[data[14]];
+        buf[3]  = detail::sbox[data[15]];
+        std::uint8_t k[4];
+        unsigned i4;
+        for (auto i = 0u; i < 4; ++i) {
+            i4 = i << 2;
+
+            unpack(w_[r*nb+i], k);
+            data[i4+0] = k[0]^detail::gf.mul2(buf[i4]) ^ detail::gf.mul3(buf[1+i4]) ^ buf[2+i4] ^ buf[3+i4];
+            data[i4+1] = k[1]^buf[i4] ^ detail::gf.mul2(buf[1+i4]) ^ detail::gf.mul3(buf[2+i4]) ^ buf[3+i4];
+            data[i4+2] = k[2]^buf[i4] ^ buf[1+i4] ^ detail::gf.mul2(buf[2+i4]) ^ detail::gf.mul3(buf[3+i4]);
+            data[i4+3] = k[3]^detail::gf.mul3(buf[i4]) ^ buf[1+i4] ^ buf[2+i4] ^ detail::gf.mul2(buf[3+i4]);
+        }
+    }
     inline static void sub_bytes_shift_rows(std::uint8_t* data) noexcept
     {
         std::uint8_t buf[block_size];
@@ -270,7 +303,6 @@ struct aes<K, std::enable_if_t<K == 16 || K ==24 || K ==32>> {
 
     inline void mix_columns_add_roundkey(std::uint8_t* data, unsigned r) const noexcept
     {
-        using gf = ouchi::math::gf256<0x1b>;
         std::uint8_t x[4];
         std::uint8_t k[4];
         unsigned i4;
@@ -286,7 +318,6 @@ struct aes<K, std::enable_if_t<K == 16 || K ==24 || K ==32>> {
     }
     inline static void inv_mix_columns(std::uint8_t* data) noexcept
     {
-        using gf = ouchi::math::gf256<0x1b>;
         std::uint8_t x[4];
         unsigned i4;
 
