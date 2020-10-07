@@ -253,10 +253,9 @@ struct aes<K, std::enable_if_t<K == 16 || K ==24 || K ==32>> {
         buf[9]  = detail::sbox[data[13]];
         buf[6]  = detail::sbox[data[14]];
         buf[3]  = detail::sbox[data[15]];
-        unpack(w_[r*nb+0], k);
-        unpack(w_[r*nb+1], k+4);
-        unpack(w_[r*nb+2], k+8);
-        unpack(w_[r*nb+3], k+12);
+
+        std::memcpy(k, w8_ + nb*nb*r, block_size);
+
         data[0+0]  = k[ 0]^detail::gf.mul2(buf[0]) ^ detail::gf.mul3(buf[1+0]) ^ buf[2+0] ^ buf[3+0];
         data[0+1]  = k[ 1]^buf[0] ^ detail::gf.mul2(buf[1+0]) ^ detail::gf.mul3(buf[2+0]) ^ buf[3+0];
         data[0+2]  = k[ 2]^buf[0] ^ buf[1+0] ^ detail::gf.mul2(buf[2+0]) ^ detail::gf.mul3(buf[3+0]);
