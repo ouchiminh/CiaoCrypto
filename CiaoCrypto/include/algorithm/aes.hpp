@@ -176,9 +176,7 @@ struct aes<K, std::enable_if_t<K == 16 || K ==24 || K ==32>> {
     {
         add_roundkey(data, nr);
         for (auto i = nr - 1u; i > 0; --i) {
-            inv_sub_bytes_shift_rows(data);
-            add_roundkey(data, i);
-            inv_mix_columns(data);
+            dec_round(data, i);
         }
         inv_sub_bytes_shift_rows(data);
         add_roundkey(data, 0);
@@ -235,22 +233,22 @@ struct aes<K, std::enable_if_t<K == 16 || K ==24 || K ==32>> {
     {
         std::uint8_t buf[block_size];
         std::uint32_t* p = reinterpret_cast<std::uint32_t*>(data);
-        buf[0]  = detail::sbox[data[0]];
-        buf[13] = detail::sbox[data[1]];
-        buf[10] = detail::sbox[data[2]];
-        buf[7]  = detail::sbox[data[3]];
-        buf[4]  = detail::sbox[data[4]];
-        buf[1]  = detail::sbox[data[5]];
-        buf[14] = detail::sbox[data[6]];
-        buf[11] = detail::sbox[data[7]];
-        buf[8]  = detail::sbox[data[8]];
-        buf[5]  = detail::sbox[data[9]];
-        buf[2]  = detail::sbox[data[10]];
-        buf[15] = detail::sbox[data[11]];
-        buf[12] = detail::sbox[data[12]];
-        buf[9]  = detail::sbox[data[13]];
-        buf[6]  = detail::sbox[data[14]];
-        buf[3]  = detail::sbox[data[15]];
+        buf[0]  = data[0];
+        buf[13] = data[1];
+        buf[10] = data[2];
+        buf[7]  = data[3];
+        buf[4]  = data[4];
+        buf[1]  = data[5];
+        buf[14] = data[6];
+        buf[11] = data[7];
+        buf[8]  = data[8];
+        buf[5]  = data[9];
+        buf[2]  = data[10];
+        buf[15] = data[11];
+        buf[12] = data[12];
+        buf[9]  = data[13];
+        buf[6]  = data[14];
+        buf[3]  = data[15];
         std::memcpy(data, w8_ + nb*nb*r, block_size);
         p[0] ^= detail::gf.data2113[buf[0]] ^ detail::gf.data3211[buf[1]] ^ detail::gf.data1321[buf[2]] ^ detail::gf.data1132[buf[3]];
         p[1] ^= detail::gf.data2113[buf[4]] ^ detail::gf.data3211[buf[5]] ^ detail::gf.data1321[buf[6]] ^ detail::gf.data1132[buf[7]];
