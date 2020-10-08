@@ -71,17 +71,23 @@ struct gf_mul {
     std::uint32_t data9dbe[256];
     gf_mul()
     {
+        constexpr sbox_t sbox;
+        constexpr inv_sbox_t inv_sbox;
         for (int i = 0; i < 256; ++i) {
-            std::uint8_t a = gf::mul(i, 2), b = gf::mul(i, 3),
-                d9 = gf::mul(i, 9), db = gf::mul(i, 0xb), dd = gf::mul(i, 0xd), de = gf::mul(i, 0xe);
-            data2113[i] = pack32(a, i, i, b);
-            data3211[i] = pack32(b, a, i, i);
-            data1321[i] = pack32(i, b, a, i);
-            data1132[i] = pack32(i, i, b, a);
-            datae9db[i] = pack32(de, d9, dd, db);
-            databe9d[i] = pack32(db, de, d9, dd);
-            datadbe9[i] = pack32(dd, db, de, d9);
-            data9dbe[i] = pack32(d9, dd, db, de);
+            auto buf = i;
+            i = sbox[i];
+            std::uint8_t a = gf::mul(i, 2), b = gf::mul(i, 3);
+            data2113[buf] = memassign32(a, i, i, b);
+            data3211[buf] = memassign32(b, a, i, i);
+            data1321[buf] = memassign32(i, b, a, i);
+            data1132[buf] = memassign32(i, i, b, a);
+            i = inv_sbox[buf];
+            std::uint8_t d9 = gf::mul(i, 9), db = gf::mul(i, 0xb), dd = gf::mul(i, 0xd), de = gf::mul(i, 0xe);
+            datae9db[buf] = memassign32(de, d9, dd, db);
+            databe9d[buf] = memassign32(db, de, d9, dd);
+            datadbe9[buf] = memassign32(dd, db, de, d9);
+            data9dbe[buf] = memassign32(d9, dd, db, de);
+            i = buf;
         }
     }
 };

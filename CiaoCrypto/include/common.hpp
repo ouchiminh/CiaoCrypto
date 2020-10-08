@@ -47,7 +47,7 @@ inline constexpr auto pack(const void* src) noexcept
                                   std::make_index_sequence<sizeof(Int)>{});
 }
 
-inline std::uint32_t pack32(std::uint8_t a,
+inline std::uint32_t memassign32(std::uint8_t a,
                                       std::uint8_t b,
                                       std::uint8_t c,
                                       std::uint8_t d)
