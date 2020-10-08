@@ -80,8 +80,7 @@ struct gf_mul {
             data3211[i] = memassign32(b, a, buf, buf);
             data1321[i] = memassign32(buf, b, a, buf);
             data1132[i] = memassign32(buf, buf, b, a);
-            buf = inv_sbox[i];
-            std::uint8_t d9 = gf::mul(buf, 9), db = gf::mul(buf, 0xb), dd = gf::mul(buf, 0xd), de = gf::mul(buf, 0xe);
+            std::uint8_t d9 = gf::mul(i, 9), db = gf::mul(i, 0xb), dd = gf::mul(i, 0xd), de = gf::mul(i, 0xe);
             datae9db[i] = memassign32(de, d9, dd, db);
             databe9d[i] = memassign32(db, de, d9, dd);
             datadbe9[i] = memassign32(dd, db, de, d9);
@@ -193,31 +192,6 @@ struct aes<K, std::enable_if_t<K == 16 || K ==24 || K ==32>> {
         return tmp.l;
     }
 
-    template<class SBox = detail::sbox_t>
-    inline static void subbytes(std::uint8_t* data) noexcept
-    {
-        constexpr SBox sbox;
-        data[ 0] = sbox[data[ 0]];
-        data[ 1] = sbox[data[ 1]];
-        data[ 2] = sbox[data[ 2]];
-        data[ 3] = sbox[data[ 3]];
-
-        data[ 4] = sbox[data[ 4]];
-        data[ 5] = sbox[data[ 5]];
-        data[ 6] = sbox[data[ 6]];
-        data[ 7] = sbox[data[ 7]];
-
-        data[ 8] = sbox[data[ 8]];
-        data[ 9] = sbox[data[ 9]];
-        data[10] = sbox[data[10]];
-        data[11] = sbox[data[11]];
-
-        data[12] = sbox[data[12]];
-        data[13] = sbox[data[13]];
-        data[14] = sbox[data[14]];
-        data[15] = sbox[data[15]];
-    }
-
     inline static std::uint32_t rotword(std::uint32_t i) noexcept
     {
         return rotl(i, 8);
@@ -275,6 +249,37 @@ struct aes<K, std::enable_if_t<K == 16 || K ==24 || K ==32>> {
         data[14] ^= detail::sbox[buf[6]];
         data[15] ^= detail::sbox[buf[11]];
     }
+    inline void dec_round(std::uint8_t* data, unsigned r) const noexcept
+    {
+        std::uint8_t buf[block_size];
+        buf[0]  = detail::inv_sbox[data[0]];
+        buf[1]  = detail::inv_sbox[data[13]];
+        buf[2]  = detail::inv_sbox[data[10]];
+        buf[3]  = detail::inv_sbox[data[7]];
+        buf[4]  = detail::inv_sbox[data[4]];
+        buf[5]  = detail::inv_sbox[data[1]];
+        buf[6]  = detail::inv_sbox[data[14]];
+        buf[7]  = detail::inv_sbox[data[11]];
+        buf[8]  = detail::inv_sbox[data[8]];
+        buf[9]  = detail::inv_sbox[data[5]];
+        buf[10] = detail::inv_sbox[data[2]];
+        buf[11] = detail::inv_sbox[data[15]];
+        buf[12] = detail::inv_sbox[data[12]];
+        buf[13] = detail::inv_sbox[data[9]];
+        buf[14] = detail::inv_sbox[data[6]];
+        buf[15] = detail::inv_sbox[data[3]];
+        unsigned i4 = 0;
+        auto* p = reinterpret_cast<std::uint32_t*>(data);
+        add_roundkey(buf, r);
+
+        for (auto i = 0u; i < 4; ++i) {
+            i4 = i << 2;
+            p[i] = detail::gf.datae9db[buf[i4]] ^
+                detail::gf.databe9d[buf[i4+1]] ^
+                detail::gf.datadbe9[buf[i4+2]] ^
+                detail::gf.data9dbe[buf[i4+3]];
+        }
+    }
     inline static void inv_sub_bytes_shift_rows(std::uint8_t* data) noexcept
     {
         std::uint8_t buf[block_size];
@@ -295,17 +300,6 @@ struct aes<K, std::enable_if_t<K == 16 || K ==24 || K ==32>> {
         data[13] = detail::inv_sbox[buf[9]];
         data[14] = detail::inv_sbox[buf[6]];
         data[15] = detail::inv_sbox[buf[3]];
-    }
-
-    inline static void inv_mix_columns(std::uint8_t* data) noexcept
-    {
-        unsigned i4;
-        auto* p = reinterpret_cast<std::uint32_t*>(data);
-
-        for (auto i = 0u; i < 4; ++i) {
-            i4 = i << 2;
-            p[i] = detail::gf.datae9db[data[i4]] ^ detail::gf.databe9d[data[i4+1]] ^ detail::gf.datadbe9[data[i4+2]] ^ detail::gf.data9dbe[data[i4+3]];
-        }
     }
 
 //private:
