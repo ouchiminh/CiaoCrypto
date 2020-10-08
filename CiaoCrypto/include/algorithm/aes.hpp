@@ -74,20 +74,18 @@ struct gf_mul {
         constexpr sbox_t sbox;
         constexpr inv_sbox_t inv_sbox;
         for (int i = 0; i < 256; ++i) {
-            auto buf = i;
-            i = sbox[i];
-            std::uint8_t a = gf::mul(i, 2), b = gf::mul(i, 3);
-            data2113[buf] = memassign32(a, i, i, b);
-            data3211[buf] = memassign32(b, a, i, i);
-            data1321[buf] = memassign32(i, b, a, i);
-            data1132[buf] = memassign32(i, i, b, a);
-            i = inv_sbox[buf];
-            std::uint8_t d9 = gf::mul(i, 9), db = gf::mul(i, 0xb), dd = gf::mul(i, 0xd), de = gf::mul(i, 0xe);
-            datae9db[buf] = memassign32(de, d9, dd, db);
-            databe9d[buf] = memassign32(db, de, d9, dd);
-            datadbe9[buf] = memassign32(dd, db, de, d9);
-            data9dbe[buf] = memassign32(d9, dd, db, de);
-            i = buf;
+            auto buf = sbox[i];
+            std::uint8_t a = gf::mul(buf, 2), b = gf::mul(buf, 3);
+            data2113[i] = memassign32(a, buf, buf, b);
+            data3211[i] = memassign32(b, a, buf, buf);
+            data1321[i] = memassign32(buf, b, a, buf);
+            data1132[i] = memassign32(buf, buf, b, a);
+            buf = inv_sbox[i];
+            std::uint8_t d9 = gf::mul(buf, 9), db = gf::mul(buf, 0xb), dd = gf::mul(buf, 0xd), de = gf::mul(buf, 0xe);
+            datae9db[i] = memassign32(de, d9, dd, db);
+            databe9d[i] = memassign32(db, de, d9, dd);
+            datadbe9[i] = memassign32(dd, db, de, d9);
+            data9dbe[i] = memassign32(d9, dd, db, de);
         }
     }
 };
