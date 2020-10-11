@@ -36,5 +36,8 @@
     <ClInclude Include="include\algorithm\dh_key_exchange.hpp">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="include\block_cipher_mode.hpp">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
