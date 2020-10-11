@@ -1,3 +1,6 @@
 [submodule "test/ouchitest"]
 	path = test/ouchitest
 	url = https://github.com/ouchiminh/ouchitest.git
+[submodule "thirdparty/mitama-cpp-result"]
+	path = thirdparty/mitama-cpp-result
+	url = https://github.com/LoliGothick/mitama-cpp-result.git
