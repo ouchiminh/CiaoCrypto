@@ -4,3 +4,6 @@
 [submodule "thirdparty/mitama-cpp-result"]
 	path = thirdparty/mitama-cpp-result
 	url = https://github.com/LoliGothick/mitama-cpp-result.git
+[submodule "mitama-cpp-result"]
+	path = mitama-cpp-result
+	url = https://github.com/LoliGothick/mitama-cpp-result.git
