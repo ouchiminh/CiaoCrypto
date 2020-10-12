@@ -4,3 +4,6 @@
 [submodule "ouchilib"]
 	path = ouchilib
 	url = https://github.com/ouchiminh/ouchilib.git
+[submodule "multiprecision"]
+	path = multiprecision
+	url = https://github.com/boostorg/multiprecision.git
