@@ -2,11 +2,11 @@
 
 namespace ciao {
 
-template<class Int, class = void>
-class dh_key_exchange;
+template<class T>
+concept integer = std::is_integral_v<T>;
 
-template<class Int>
-class dh_key_exchange<Int, std::enable_if_t<std::is_integral_v<Int>>>;
+template<integer Int>
+class dh_key_exchange;
 
 }
 
