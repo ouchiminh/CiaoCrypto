@@ -7,7 +7,7 @@
 #include <cassert>
 #include <concepts>
 
-#include <mitama/result/result.hpp>
+#include <ouchilib/result/result.hpp>
 
 #include "error_code.hpp"
 
@@ -33,8 +33,8 @@ public:
     {}
     virtual ~block_cipher() = default;
 
-    virtual mitama::result<rsize_t, error_code> cipher(const void* src, rsize_t srcsize, void* dest, rsize_t destsize) noexcept(noexcept(algorithm_.cipher(std::declval<std::uint8_t*>()))) = 0;
-    virtual mitama::result<rsize_t, error_code> inv_cipher(const void* src, rsize_t srcsize, void* dest, rsize_t destsize) noexcept(noexcept(algorithm_.cipher(std::declval<std::uint8_t*>()))) = 0;
+    virtual ouchi::result::result<rsize_t, error_code> cipher(const void* src, rsize_t srcsize, void* dest, rsize_t destsize) = 0;
+    virtual ouchi::result::result<rsize_t, error_code> inv_cipher(const void* src, rsize_t srcsize, void* dest, rsize_t destsize) = 0;
 protected:
     static rsize_t pad(const void* src, size_t srcsize, void* dest, size_t destsize, std::uint8_t width) noexcept
     {
@@ -53,34 +53,34 @@ protected:
 template<detail::block_cipher_algorithm A>
 class ecb : public block_cipher<A> {
 public:
-    using block_cipher::block_cipher;
+    using block_cipher<A>::block_cipher;
 
-    virtual mitama::result<rsize_t, error_code> cipher(const void* src, rsize_t srcsize, void* dest, rsize_t destsize) noexcept(noexcept(algorithm_.cipher(std::declval<std::uint8_t*>()))) override
+    virtual ouchi::result::result<rsize_t, error_code> cipher(const void* src, rsize_t srcsize, void* dest, rsize_t destsize) override
     {
-        auto actual_size = pad(src, srcsize, dest, destsize, A::block_size);
-        if (srcsize > RSIZE_MAX) return mitama::failure(error_code(error_value::invalid_arguments));
-        if (actual_size == SIZE_MAX) return mitama::failure(error_code(error_value::too_short_buffer));
+        auto actual_size = block_cipher<A>::pad(src, srcsize, dest, destsize, A::block_size);
+        if (srcsize > RSIZE_MAX) return ouchi::result::err(error_code(error_value::invalid_arguments));
+        if (actual_size == SIZE_MAX) return ouchi::result::err(error_code(error_value::too_short_buffer));
 
-        for (rsize_t i = 0; i < actual_size; ++i) {
-            algorithm_.cipher(dest + i);
+        for (rsize_t i = 0; i < actual_size; i += A::block_size) {
+            block_cipher<A>::algorithm_.cipher((std::uint8_t*)dest + i);
         }
-        return mitama::success(actual_size);
+        return ouchi::result::ok(actual_size);
         
     }
-    virtual mitama::result<rsize_t, error_code> inv_cipher(const void* src, rsize_t srcsize, void* dest, rsize_t destsize) noexcept(noexcept(algorithm_.cipher(std::declval<std::uint8_t*>()))) override
+    virtual ouchi::result::result<rsize_t, error_code> inv_cipher(const void* src, rsize_t srcsize, void* dest, rsize_t destsize) override
     {
-        if (srcsize > RSIZE_MAX && srcsize % A::block_size != 0) return mitama::failure(error_code(error_value::invalid_arguments));
-        if (srcsize > destsize) return mitama::failure(error_code(error_value::too_short_buffer));
+        if (srcsize > RSIZE_MAX && srcsize % A::block_size != 0) return ouchi::result::err(error_code(error_value::invalid_arguments));
+        if (srcsize > destsize) return ouchi::result::err(error_code(error_value::too_short_buffer));
         std::memcpy(dest, src, srcsize);
         
-        for (rsize_t i = 0; i < srcsize; ++i) {
-            algorithm_.inv_cipher(dest + i);
+        for (rsize_t i = 0; i < srcsize; i += A::block_size) {
+            block_cipher<A>::algorithm_.inv_cipher((std::uint8_t*)dest + i);
         }
-        auto pad_size = dest[srcsize - 1];
+        auto pad_size = ((std::uint8_t*)dest)[srcsize - 1];
         for (size_t i = 0; i < pad_size; ++i) {
-            if (dest[srcsize - i - 1] != pad_size) return mitama::failure(error_code(error_value::corrupted_data));
+            if (((std::uint8_t*)dest)[srcsize - i - 1] != pad_size) return ouchi::result::err(error_code(error_value::corrupted_data));
         }
-        return mitama::success(srcsize - pad_size);
+        return ouchi::result::ok(srcsize - pad_size);
     }
 
 };

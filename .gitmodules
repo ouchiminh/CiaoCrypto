@@ -1,3 +1,6 @@
 [submodule "test/ouchitest"]
 	path = test/ouchitest
 	url = https://github.com/ouchiminh/ouchitest.git
+[submodule "ouchilib"]
+	path = ouchilib
+	url = https://github.com/ouchiminh/ouchilib.git
