@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include "../common.hpp"
-#include "../gf.hpp"
 #include "../matrix.hpp"
+#include <ouchilib/math/gf.hpp>
 #include <type_traits>
 #include <cstdint>
 #include <cstring>
@@ -60,7 +60,7 @@ inline constexpr sbox_t sbox;
 inline constexpr inv_sbox_t inv_sbox;
 
 struct gf_mul {
-    using gf = ciao::gf256<0x1b>;
+    using gf = ouchi::math::gf256<0x1b>;
     std::uint32_t data2113[256];
     std::uint32_t data3211[256];
     std::uint32_t data1321[256];
@@ -163,13 +163,13 @@ struct aes<K, std::enable_if_t<K == 16 || K ==24 || K ==32>> {
             unpack(w_[i], w8_+i*nb);
         }
     }
-    void cipher(std::uint8_t* data) noexcept
+    void cipher(std::uint8_t* data) const noexcept
     {
         add_roundkey(data, 0);
         enc_round(data, std::make_index_sequence<nr-1>{});
         enc_final_round(data);
     }
-    void inv_cipher(std::uint8_t* data) noexcept
+    void inv_cipher(std::uint8_t* data) const noexcept
     {
         add_roundkey(data, nr);
         for (auto i = nr - 1u; i > 0; --i) {

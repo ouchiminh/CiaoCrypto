@@ -5,6 +5,7 @@
 #include "../ouchitest/include/ouchitest.hpp"
 #include "algorithm/aes.hpp"
 #include "algorithm/aes_ni.hpp"
+#include "block_cipher_mode.hpp"
 
 OUCHI_TEST_CASE(aes128_key_expansion){
     std::uint8_t key[] = {
@@ -195,6 +196,25 @@ OUCHI_TEST_CASE(aes128_benchmark)
 
         duration<double, std::ratio<1, 1>> dur = std::chrono::steady_clock::now() - beg;
         std::cout << "aes-128 ecb dec " <<  data.size()*r / dur.count() / 1000 << " k\n";
+    }
+
+}
+OUCHI_TEST_CASE(aes128cbc_benchmark)
+{
+    using namespace std::chrono;
+    const unsigned char key[] = "\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f";
+    constexpr int r = 1024 * 8;
+    std::vector<std::uint8_t> data(16 * 1024, 0xc5);
+    std::vector<std::uint8_t> dest(16 * 1025);
+    ciao::cbc<ciao::aes<16>> encoder(key, key);
+    {
+        auto beg = std::chrono::steady_clock::now();
+        for (auto k = 0ull; k < r; ++k) {
+            encoder.cipher(data.data(), data.size(), dest.data(), dest.size());
+        }
+
+        duration<double, std::ratio<1, 1>> dur = std::chrono::steady_clock::now() - beg;
+        std::cout << "aes-128 cbc enc " <<  data.size()*r / dur.count() / 1000 << " k\n";
     }
 
 }
