@@ -18,6 +18,6 @@ git clone https://github.com/ouchiminh/CiaoCrypto.git
 利用しているサードパーティ製のライブラリの一覧です。
 - ouchiminh
   - ouchilib
-  - ouchitest
+  - ouchitest (testをビルドしない場合不要)
 - Boostorg
   - multiprecision
