@@ -6,9 +6,18 @@
 - 容易な導入
 - ヘッダオンリー
 
+## 導入
+
+```
+git clone https://github.com/ouchiminh/CiaoCrypto.git
+```
+`ouchilib/include`と`multiprecision/include`をインクルードパスに追加します。
+
 # サードパーティ製のライブラリ
 
-利用しているサードパーティ製のライブラリの一覧です。ライセンス文はリポジトリの親ディレクトリに`<ライブラリ名>-<LICENSE>`の形で掲載しています。
-
-- LoliGothick
-  - **mitama-cpp-result** Copyright (c) 2018 Cranberries
+利用しているサードパーティ製のライブラリの一覧です。
+- ouchiminh
+  - ouchilib
+  - ouchitest
+- Boostorg
+  - multiprecision
