@@ -281,7 +281,7 @@ OUCHI_TEST_CASE(aesni128cbc_benchmark)
 {
     using namespace std::chrono;
     const unsigned char key[] = "\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f";
-    constexpr int r = 1024 * 1024;
+    constexpr int r = 1024 * 256;
     std::vector<std::uint8_t> data(16 * 1024, 0xc5);
     std::vector<std::uint8_t> dest(16 * 1025);
     ciao::cbc<ciao::aes_ni<16>> encoder(key, key);
