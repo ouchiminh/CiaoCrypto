@@ -1,6 +1,5 @@
 ﻿#pragma once
 #include "../common.hpp"
-#include "../matrix.hpp"
 #include <ouchilib/math/gf.hpp>
 #include <type_traits>
 #include <cstdint>

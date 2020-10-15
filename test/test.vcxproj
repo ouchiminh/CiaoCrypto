@@ -131,7 +131,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)\CiaoCrypto\include;$(SolutionDir)\ouchilib\include;$(SolutionDir)\multiprecision\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\CiaoCrypto\include;$(SolutionDir)\ouchilib\include;$(Boost_Dir)\include\boost-1_74;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -147,7 +147,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)\CiaoCrypto\include;$(SolutionDir)\ouchilib\include;$(SolutionDir)\multiprecision\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\CiaoCrypto\include;$(SolutionDir)\ouchilib\include;$(Boost_Dir)\include\boost-1_74;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <OpenMPSupport>false</OpenMPSupport>
@@ -170,6 +170,7 @@
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\test_aes.cpp" />
     <ClCompile Include="src\test_block_cipher.cpp" />
+    <ClCompile Include="src\test_primality.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\CiaoCrypto\CiaoCrypto.vcxproj">

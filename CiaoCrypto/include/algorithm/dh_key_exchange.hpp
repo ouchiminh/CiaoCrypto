@@ -1,31 +1,35 @@
 ﻿#include "ouchilib/math/modint.hpp"
+#include "boost/multiprecision/miller_rabin.hpp"
 #include <type_traits>
+#include <cassert>
 
 namespace ciao {
 
 template<class Int>
 class dh_key_exchange {
 public:
-    dh_key_exchange(Int g, Int p, Int private_key)
+    using int_type = std::remove_cvref_t<Int>;
+    dh_key_exchange(const int_type& g, const int_type& p, const int_type& private_key)
         : g_{g, p}, private_key_{private_key}
     {
-        namespace mp = boost::multiprecision;
-        mp::miller_rabin()
+        //namespace mp = boost::multiprecision;
+        //if (!mp::miller_rabin_test(p, 20))
+        //    throw std::invalid_argument("p is not a prime.");
     }
 
-    Int get_public_key() const
+    int_type get_public_key() const
     {
-        return pow(g_, private_key_)
+        return pow(g_, private_key_);
     }
-    Int calc_secret(Int bobs_public_key) const
+    int_type calc_secret(const int_type& bobs_public_key) const
     {
-        return pow(modint<Int>(bobs_public_key, g_.mod()), private_key_);
+        return pow(ouchi::math::modint<int_type>(bobs_public_key, g_.mod()), private_key_);
     }
     
 
 private:
-    ouchi::math::modint<Int> g_;
-    Int private_key_;
+    ouchi::math::modint<int_type> g_;
+    int_type private_key_;
 };
 
 }
