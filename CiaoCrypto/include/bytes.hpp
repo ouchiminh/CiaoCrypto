@@ -34,7 +34,7 @@ union alignas(__m128i) bytes<Size, std::enable_if_t<Size == 16>> {
         __m128i a = _mm_loadu_si128((__m128i*)srcdest),
             b = _mm_loadu_si128((const __m128i*)src);
         a = _mm_xor_si128(a, b);
-        std::memcpy(srcdest, &a, Size);
+        _mm_storeu_si128((__m128i*)srcdest, a);
     }
 };
 static_assert(sizeof(bytes<16>) == 16);

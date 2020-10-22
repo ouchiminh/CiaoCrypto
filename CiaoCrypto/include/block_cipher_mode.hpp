@@ -73,7 +73,7 @@ public:
     {
         if (srcsize > RSIZE_MAX && srcsize % A::block_size != 0) return ouchi::result::err(error_code(error_value::invalid_arguments));
         if (srcsize > destsize) return ouchi::result::err(error_code(error_value::too_short_buffer));
-        std::memcpy(dest, src, srcsize);
+        std::memmove(dest, src, srcsize);
         
         for (rsize_t i = 0; i < srcsize; i += A::block_size) {
             block_cipher<A>::algorithm_.inv_cipher((std::uint8_t*)dest + i);
@@ -110,9 +110,9 @@ public:
         if (actual_size == SIZE_MAX) return ouchi::result::err(error_code(error_value::too_short_buffer));
 
         for (rsize_t i = 0; i < actual_size; i += A::block_size) {
-            state_.xor_op(bytes<A::block_size>((std::uint8_t*)dest + i));
+            state_.xor_op(_mm_loadu_si128((const __m128i*)((std::uint8_t*)dest + i)));
             block_cipher<A>::algorithm_.cipher(state_.byte_data);
-            std::memcpy(((std::uint8_t*)dest + i), state_.byte_data, A::block_size);
+            _mm_storeu_si128((__m128i*)((std::uint8_t*)dest + i), state_.data);
         }
         return ouchi::result::ok(actual_size);
     }
