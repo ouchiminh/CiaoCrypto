@@ -87,8 +87,10 @@ public:
 
 };
 
+template<detail::block_cipher_algorithm A, class = void>
+class cbc;
 template<detail::block_cipher_algorithm A>
-class cbc : public block_cipher<A> {
+class cbc<A, std::enable_if_t<A::block_size == 16>> : public block_cipher<A> {
 public:
     static constexpr bool parallel_encrypt = false;
     static constexpr bool parallel_decrypt = true;
@@ -137,6 +139,89 @@ public:
     }
 private:
     bytes<A::block_size> state_;
+};
+
+template<detail::block_cipher_algorithm A, class = void>
+class ctr;
+template<detail::block_cipher_algorithm A>
+class ctr<A, std::enable_if_t<A::block_size == 16>> : public block_cipher<A> {
+public:
+    static constexpr bool parallel_encrypt = true;
+    static constexpr bool parallel_decrypt = true;
+
+    ctr(const std::uint8_t* nonce,
+                    const void* block_num,
+                    const std::uint8_t* key)
+        : block_cipher<A>{ key }
+    {
+        memcpy(counter_.bctr, nonce, A::block_size / 2);
+        set_block_number(block_num);
+    }
+    template<class Int, std::enable_if_t<std::is_integral_v<Int> && sizeof(Int) == A::block_size / 2, int> = 0>
+    ctr(const std::uint8_t* nonce,
+                    Int block_num,
+                    const std::uint8_t* key)
+        : block_cipher<A>{ key }
+    {
+        memcpy(counter_.bctr, nonce, A::block_size / 2);
+        set_block_number(&block_num);
+    }
+    void set_block_number(const void* block_num) noexcept
+    {
+        std::memcpy(counter_.bctr + A::block_size / 2, block_num, A::block_size / 2);
+        state_ = counter_;
+        block_cipher<A>::algorithm_.cipher(state_.bctr);
+    }
+    template<class Int>
+    auto set_block_number(Int block_num) noexcept
+        -> std::enable_if_t<std::is_integral_v<Int> && sizeof(Int) == A::block_size / 2>
+    {
+        set_block_number(&block_num);
+    }
+    virtual ouchi::result::result<rsize_t, error_code> cipher(const void* src, rsize_t srcsize, void* dest, rsize_t destsize) override
+    {
+        auto actual_size = block_cipher<A>::pad(src, srcsize, dest, destsize, A::block_size);
+        if (srcsize > RSIZE_MAX) return ouchi::result::err(error_code(error_value::invalid_arguments));
+        if (actual_size == SIZE_MAX) return ouchi::result::err(error_code(error_value::too_short_buffer));
+
+        cipher((__m128i*)dest, actual_size / sizeof(__m128i));
+
+        return ouchi::result::ok(actual_size);
+    }
+    virtual ouchi::result::result<rsize_t, error_code> inv_cipher(const void* src, rsize_t srcsize, void* dest, rsize_t destsize)
+    {
+        if (srcsize > RSIZE_MAX && srcsize % A::block_size != 0) return ouchi::result::err(error_code(error_value::invalid_arguments));
+        if (srcsize > destsize) return ouchi::result::err(error_code(error_value::too_short_buffer));
+        std::memmove(dest, src, srcsize);
+
+        cipher((__m128i*)dest, destsize / sizeof(__m128i));
+
+        auto pad_size = ((std::uint8_t*)dest)[srcsize - 1];
+        for (size_t i = 0; i < pad_size; ++i) {
+            if (((std::uint8_t*)dest)[srcsize - i - 1] != pad_size) return ouchi::result::err(error_code(error_value::corrupted_data));
+        }
+        return ouchi::result::ok(srcsize - pad_size);
+    }
+private:
+    void cipher(__m128i* data, rsize_t count)
+    {
+        __m128i cur;
+        __m128i simd_state;
+        for (rsize_t i = 0; i < count; ++i) {
+            state_ = counter_;
+            block_cipher<A>::algorithm_.cipher(state_.bctr);
+            simd_state = _mm_load_si128((__m128i*)&state_);
+            cur = _mm_loadu_si128(data + i);
+            _mm_storeu_si128(data + i, _mm_xor_si128(simd_state, cur));
+            counter_.qwctr[A::block_size / 8 - 1] += 1;
+        }
+    }
+    alignas(__m128i) union {
+        std::uint8_t bctr[A::block_size];
+        std::uint16_t wctr[A::block_size / 2];
+        std::uint32_t dwctr[A::block_size / 4];
+        std::uint64_t qwctr[A::block_size / 8];
+    } counter_, state_;
 };
 
 template<detail::block_cipher_algorithm A, class To, class = void>
