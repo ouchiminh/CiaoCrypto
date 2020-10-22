@@ -139,8 +139,66 @@ private:
     bytes<A::block_size> state_;
 };
 
-template<detail::block_cipher_algorithm A>
-class ctr;
+template<detail::block_cipher_algorithm A, class To, class = void>
+class stream_like_ctr;
+
+template<detail::block_cipher_algorithm A, class To>
+class stream_like_ctr<A, To, std::enable_if_t<(A::block_size > 8) && (A::block_size >= sizeof(To)) && std::is_trivially_constructible_v<To>, void>> {
+public:
+    stream_like_ctr(const std::uint8_t* nonce,
+                    const void* block_num,
+                    const std::uint8_t* key)
+        : algorithm_{ key }
+    {
+        memcpy(counter_.bctr, nonce, A::block_size / 2);
+        set_block_number(block_num);
+    }
+    template<class Int, std::enable_if_t<std::is_integral_v<Int> && sizeof(Int) == A::block_size / 2, int> = 0>
+    stream_like_ctr(const std::uint8_t* nonce,
+                    Int block_num,
+                    const std::uint8_t* key)
+        : algorithm_{ key }
+    {
+        memcpy(counter_.bctr, nonce, A::block_size / 2);
+        set_block_number(&block_num);
+    }
+    void set_block_number(const void* block_num, unsigned count_in_block = 0) noexcept
+    {
+        std::memcpy(counter_.bctr + A::block_size / 2, block_num, A::block_size / 2);
+        state_ = counter_;
+        algorithm_.cipher(state_.bctr);
+        count_in_block_ = count_in_block;
+    }
+    template<class Int>
+    auto set_block_number(Int block_num, unsigned count_in_block = 0) noexcept
+        -> std::enable_if_t<std::is_integral_v<Int> && sizeof(Int) == A::block_size / 2>
+    {
+        set_block_number(&block_num, count_in_block);
+    }
+    auto next() noexcept
+        ->std::remove_cvref_t<To>
+    {
+        To ret;
+        std::memcpy(&ret, state_.bctr + sizeof(To)*count_in_block_, sizeof(To));
+        if (++count_in_block_ == max_in_block) {
+            counter_.qwctr[A::block_size / 8 - 1] += 1;
+            state_ = counter_;
+            algorithm_.cipher(state_.bctr);
+            count_in_block_ = 0;
+        }
+        return ret;
+    }
+private:
+    static constexpr unsigned max_in_block = A::block_size / sizeof(To);
+    union {
+        std::uint8_t bctr[A::block_size];
+        std::uint16_t wctr[A::block_size / 2];
+        std::uint32_t dwctr[A::block_size / 4];
+        std::uint64_t qwctr[A::block_size / 8];
+    } counter_, state_;
+    unsigned count_in_block_;
+    A algorithm_;
+};
 
 }
 

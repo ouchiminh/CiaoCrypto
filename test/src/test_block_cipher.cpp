@@ -59,3 +59,27 @@ OUCHI_TEST_CASE(test_cbc_encode_decode)
     OUCHI_CHECK_EQUAL(dest[15], 0xff);
 }
 
+OUCHI_TEST_CASE(test_ctr_encode_decode)
+{
+    using namespace ciao;
+    const char block[] = "\x00\x11\x22\x33\x44\x55\x66\x77\x88\x99\xaa\xbb\xcc\xdd\xee\xff";
+    const char key[] =
+        "\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f";
+    unsigned int dest[32] = {0,1,2,3,4,5,6,7};
+    size_t bn = 0;
+    stream_like_ctr<aes<16>, unsigned int> ctr((const std::uint8_t*)block, 0ull, (const std::uint8_t*)key);
+    stream_like_ctr<aes<16>, unsigned int> ctr_inv((const std::uint8_t*)block, 0ull, (const std::uint8_t*)key);
+    for (int i = 0; i < 32; ++i) {
+        dest[i] ^= ctr.next();
+    }
+    for (int i = 0; i < 16; ++i) {
+        OUCHI_CHECK_TRUE(dest[i] != dest[i + 16]);
+    }
+    for (int i = 0; i < 32; ++i) {
+        dest[i] ^= ctr_inv.next();
+    }
+    for (unsigned int i = 0u; i < 8u; ++i) {
+        OUCHI_CHECK_EQUAL(dest[i], i);
+    }
+}
+
