@@ -48,9 +48,9 @@ inline constexpr auto pack(const void* src) noexcept
 }
 
 inline std::uint32_t memassign32(std::uint8_t a,
-                                      std::uint8_t b,
-                                      std::uint8_t c,
-                                      std::uint8_t d)
+                                 std::uint8_t b,
+                                 std::uint8_t c,
+                                 std::uint8_t d)
 {
     union { 
         std::uint8_t b[4];

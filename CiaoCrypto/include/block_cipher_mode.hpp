@@ -149,18 +149,18 @@ public:
     static constexpr bool parallel_encrypt = true;
     static constexpr bool parallel_decrypt = true;
 
-    ctr(const std::uint8_t* nonce,
-                    const void* block_num,
-                    const std::uint8_t* key)
+    ctr(const void* nonce,
+        const void* block_num,
+        const std::uint8_t* key)
         : block_cipher<A>{ key }
     {
         memcpy(counter_.bctr, nonce, A::block_size / 2);
         set_block_number(block_num);
     }
     template<class Int, std::enable_if_t<std::is_integral_v<Int> && sizeof(Int) == A::block_size / 2, int> = 0>
-    ctr(const std::uint8_t* nonce,
-                    Int block_num,
-                    const std::uint8_t* key)
+    ctr(const void* nonce,
+        Int block_num,
+        const std::uint8_t* key)
         : block_cipher<A>{ key }
     {
         memcpy(counter_.bctr, nonce, A::block_size / 2);
@@ -228,9 +228,10 @@ template<detail::block_cipher_algorithm A, class To, class = void>
 class stream_like_ctr;
 
 template<detail::block_cipher_algorithm A, class To>
-class stream_like_ctr<A, To, std::enable_if_t<(A::block_size > 8) && (A::block_size >= sizeof(To)) && std::is_trivially_constructible_v<To>, void>> {
+class stream_like_ctr<A, To, std::enable_if_t<(A::block_size > 8) && (A::block_size >= sizeof(To)) && std::is_trivially_constructible_v<To>, void>>
+{
 public:
-    stream_like_ctr(const std::uint8_t* nonce,
+    stream_like_ctr(const void* nonce,
                     const void* block_num,
                     const std::uint8_t* key)
         : algorithm_{ key }
@@ -239,7 +240,7 @@ public:
         set_block_number(block_num);
     }
     template<class Int, std::enable_if_t<std::is_integral_v<Int> && sizeof(Int) == A::block_size / 2, int> = 0>
-    stream_like_ctr(const std::uint8_t* nonce,
+    stream_like_ctr(const void* nonce,
                     Int block_num,
                     const std::uint8_t* key)
         : algorithm_{ key }
@@ -260,6 +261,7 @@ public:
     {
         set_block_number(&block_num, count_in_block);
     }
+    [[nodiscard]]
     auto next() noexcept
         ->std::remove_cvref_t<To>
     {
