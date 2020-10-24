@@ -56,7 +56,7 @@ OUCHI_TEST_CASE(benchmark_sha256)
         }
         auto end = chrono::steady_clock::now();
         chrono::duration<double> diff = end - beg;
-        std::cout << "sha256 " << c << "bytes " << w / diff.count() / 1024 << "kB/s\n";
+        std::cout << "sha256 " << c << "bytes " << w / diff.count() / 1024 << " kB/s\n";
     }
 }
 #endif

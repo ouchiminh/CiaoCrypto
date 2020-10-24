@@ -111,8 +111,8 @@ struct aes<K, std::enable_if_t<K == 16 || K ==24 || K ==32>> {
     static constexpr size_t block_size = 16;
     static constexpr size_t key_size = K;
     static constexpr unsigned int nb = 4;
-    static constexpr unsigned int nr = K / 4 + 6;
-    static constexpr unsigned int nk = K / 4;
+    static constexpr unsigned int nr = K / nb + 6;
+    static constexpr unsigned int nk = K / nb;
     static constexpr std::uint32_t Rcon[10] = {
         0x0100'0000,0x0200'0000,0x0400'0000,0x0800'0000,0x100'00000,
         0x2000'0000,0x4000'0000,0x8000'0000,0x1b00'0000,0x3600'0000
