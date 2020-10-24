@@ -22,6 +22,7 @@
     <ClInclude Include="include\algorithm\aes.hpp" />
     <ClInclude Include="include\algorithm\aes_ni.hpp" />
     <ClInclude Include="include\algorithm\dh_key_exchange.hpp" />
+    <ClInclude Include="include\algorithm\elgamal.hpp" />
     <ClInclude Include="include\algorithm\sha.hpp" />
     <ClInclude Include="include\block_cipher_mode.hpp" />
     <ClInclude Include="include\bytes.hpp" />
