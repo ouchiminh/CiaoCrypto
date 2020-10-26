@@ -13,9 +13,19 @@ OUCHI_TEST_CASE(test_shiftr_array)
 
 OUCHI_TEST_CASE(test_shiftl_array)
 {
-    unsigned char data[] = { 0xf1,0xfc };
-    ciao::shiftl_array(data, 4);
-    OUCHI_CHECK_EQUAL((unsigned)data[0], 0x1fu);
-    OUCHI_CHECK_EQUAL((unsigned)data[1], 0xc0u);
+    unsigned char data[] = { 0xf1,0xff };
+    ciao::shiftl_array(data, 9);
+    OUCHI_CHECK_EQUAL((unsigned)data[0], 0b1111'1110);
+    OUCHI_CHECK_EQUAL((unsigned)data[1], 0u);
+}
+
+OUCHI_TEST_CASE(test_rot_array)
+{
+    unsigned char data[16];
+    std::memset(data, 0b1010'1010, 16);
+    ciao::rotl_array(data, 90);
+    for (int i = 0; i < 16; ++i) {
+        OUCHI_REQUIRE_EQUAL((unsigned)data[i], 0b1010'1010U);
+    }
 }
 

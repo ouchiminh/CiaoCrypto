@@ -99,8 +99,8 @@ inline auto shiftl_array(Int (&data)[S], unsigned bit_width)
 
     Int buf[S] = {};
 
-    constexpr std::uint8_t lowbit[] = { 0,1,3,7,15,31,63,127 };
-    auto s = ~lowbit[bit_shift_mod_width];
+    constexpr std::uint8_t highbit[] = { 0,0x80,0xc0,0xe0,0xf0,0xf8,0xfc,0xfe,0xff };
+    auto s = highbit[bit_shift_mod_width];
     auto f = ~s;
 
     for (int i = elm_shift_width; i < (int)S; ++i) {
@@ -135,6 +135,31 @@ inline auto rotr_array(Int(&bits)[S], unsigned bit_width)
     shiftr_array(bits, bit_width);
     shiftl_array(buf, w - bit_width);
     for (unsigned i = 0; i < S; ++i) bits[i] |= buf[i];
+}
+
+template<class Int, size_t S>
+inline auto rotl_array(Int(&bits)[S], Int(&dest)[S], unsigned bit_width)
+-> std::enable_if_t<std::is_unsigned_v<Int> && sizeof(Int) == 1>
+{
+    constexpr auto w = CHAR_BIT * S;
+    //return (x << nbit) | (x >> (w - nbit));
+    std::memcpy(dest, bits, S);
+    shiftl_array(bits, bit_width);
+    shiftr_array(dest, w - bit_width);
+    for (unsigned i = 0; i < S; ++i) dest[i] |= bits[i];
+}
+
+template<class Int, size_t S>
+inline auto rotr_array(Int(&bits)[S], Int(&dest)[S], unsigned bit_width)
+-> std::enable_if_t<std::is_unsigned_v<Int> && sizeof(Int) == 1>
+{
+    constexpr auto w = CHAR_BIT * S;
+    //return (x << nbit) | (x >> (w - nbit));
+    Int buf[S];
+    std::memcpy(dest, bits, S);
+    shiftr_array(bits, bit_width);
+    shiftl_array(dest, w - bit_width);
+    for (unsigned i = 0; i < S; ++i) dest[i] |= bits[i];
 }
 
 
