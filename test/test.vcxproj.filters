@@ -30,6 +30,12 @@
     <ClCompile Include="src\test_sha.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="src\test_bit_op.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="src\test_camellia.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
     <ClCompile Include="src\test_elgamal.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
