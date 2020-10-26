@@ -138,28 +138,30 @@ inline auto rotr_array(Int(&bits)[S], unsigned bit_width)
 }
 
 template<class Int, size_t S>
-inline auto rotl_array(Int(&bits)[S], Int(&dest)[S], unsigned bit_width)
+inline auto rotl_array(const Int(&bits)[S], Int(&dest)[S], unsigned bit_width)
 -> std::enable_if_t<std::is_unsigned_v<Int> && sizeof(Int) == 1>
 {
     constexpr auto w = CHAR_BIT * S;
-    //return (x << nbit) | (x >> (w - nbit));
+    Int buf[S];
+    std::memcpy(buf, bits, S);
     std::memcpy(dest, bits, S);
-    shiftl_array(bits, bit_width);
+    shiftl_array(buf, bit_width);
     shiftr_array(dest, w - bit_width);
-    for (unsigned i = 0; i < S; ++i) dest[i] |= bits[i];
+    for (unsigned i = 0; i < S; ++i) dest[i] |= buf[i];
 }
 
 template<class Int, size_t S>
-inline auto rotr_array(Int(&bits)[S], Int(&dest)[S], unsigned bit_width)
+inline auto rotr_array(const Int(&bits)[S], Int(&dest)[S], unsigned bit_width)
 -> std::enable_if_t<std::is_unsigned_v<Int> && sizeof(Int) == 1>
 {
     constexpr auto w = CHAR_BIT * S;
-    //return (x << nbit) | (x >> (w - nbit));
+    Int buf[S];
+    std::memcpy(buf, bits, S);
     Int buf[S];
     std::memcpy(dest, bits, S);
-    shiftr_array(bits, bit_width);
+    shiftr_array(buf, bit_width);
     shiftl_array(dest, w - bit_width);
-    for (unsigned i = 0; i < S; ++i) dest[i] |= bits[i];
+    for (unsigned i = 0; i < S; ++i) dest[i] |= buf[i];
 }
 
 

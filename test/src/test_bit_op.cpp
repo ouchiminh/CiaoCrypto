@@ -23,9 +23,9 @@ OUCHI_TEST_CASE(test_rot_array)
 {
     unsigned char data[16];
     std::memset(data, 0b1010'1010, 16);
-    ciao::rotl_array(data, 90);
+    ciao::rotl_array(data, 111);
     for (int i = 0; i < 16; ++i) {
-        OUCHI_REQUIRE_EQUAL((unsigned)data[i], 0b1010'1010U);
+        OUCHI_REQUIRE_EQUAL((unsigned)data[i], 0b0101'0101U);
     }
 }
 
