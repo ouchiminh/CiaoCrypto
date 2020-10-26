@@ -23,6 +23,23 @@ random_prime(unsigned int r = 20)
     }
     return (int_t)p;
 }
+template<class Int, class UInt>
+Int random_prime(unsigned int r = 20)
+{
+    using uint_t = UInt;
+    using int_t = Int;
+    static_assert(sizeof(int_t) == sizeof(uint_t));
+    namespace mp = boost::multiprecision;
+    boost::random::independent_bits_engine<std::mt19937, Bits, uint_t> rand;
+    rand.seed(std::random_device{}());
+    uint_t p;
+    bool fp = false;
+    while (!fp) {
+        p = rand() & ~(uint_t(1) << (sizeof(Int) - 1));
+        fp = mp::miller_rabin_test(p, r);
+    }
+    return (int_t)p;
+}
 
 template<class Int>
 Int find_generator(Int p)

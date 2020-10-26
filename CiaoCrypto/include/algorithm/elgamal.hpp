@@ -1,5 +1,7 @@
 ﻿#pragma once
+#include "../primality.hpp"
 #include "dh_key_exchange.hpp"
+#include "ouchilib/math/modint.hpp"
 
 namespace ciao {
 
