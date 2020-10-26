@@ -169,6 +169,7 @@
   <ItemGroup>
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\test_aes.cpp" />
+    <ClCompile Include="src\test_bit_op.cpp" />
     <ClCompile Include="src\test_block_cipher.cpp" />
     <ClCompile Include="src\test_primality.cpp" />
     <ClCompile Include="src\test_sha.cpp" />

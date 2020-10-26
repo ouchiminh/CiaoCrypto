@@ -25,22 +25,31 @@ class camellia<S, std::enable_if_t<S == 16 || S == 24 || S == 32>> {
     void key_schedule(const std::uint8_t* key) noexcept
     {
         std::uint64_t klr[4];
-        std::uint64_t kab[2];
+        std::uint64_t ka[2];
+        std::uint64_t kb[2];
         std::memcpy(klr, key, S);
         if constexpr (S == 16)
             std::memset(klr+2, 0, 16);
         else if constexpr (S == 24)
             klr[3] = ~klr[2];
 
-        kab[0] = klr[0] ^ klr[2];
-        kab[1] = klr[1] ^ klr[3];
+        ka[0] = klr[0] ^ klr[2];
+        ka[1] = klr[1] ^ klr[3];
 
-        kab[1] = f(kab[0], 0xA09E667F3BCC908B);
-        kab[0] = f(kab[1], 0xB67AE8584CAA73B2);
-        kab[0] ^= klr[0];
-        kab[1] ^= klr[1];
-        kab[1] = f(kab[0], 0xC6EF372FE94F82BE);
-        kab[0] = f(kab[1], 0x54FF53A5F1D36F1C);
+        ka[1] ^= f(ka[0], 0xA09E667F3BCC908B);
+        ka[0] ^= f(ka[1], 0xB67AE8584CAA73B2);
+        ka[0] ^= klr[0];
+        ka[1] ^= klr[1];
+        ka[1] ^= f(ka[0], 0xC6EF372FE94F82BE);
+        ka[0] ^= f(ka[1], 0x54FF53A5F1D36F1C);
+        if constexpr (S > 16) {
+            std::memset(kb, klr+2, 16);
+            kb[0] ^= ka[0];
+            kb[1] ^= ka[1];
+
+            kb[1] ^= f(kb[0], 0x10E527FADE682D1D);
+            kb[0] ^= f(kb[1], 0xB05688C2B3E6C1FD);
+        }
     }
 
     inline static std::uint64_t f(std::uint64_t x, std::uint64_t k) noexcept;
