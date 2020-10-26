@@ -6,7 +6,7 @@
 OUCHI_TEST_CASE(test_prime_gen)
 {
     using namespace ciao;
-    auto p = random_choice<1024>();
+    auto p = random_prime<1024>();
     dh_key_exchange<decltype(p)> dha(2, p, 40);
     dh_key_exchange<decltype(p)> dhb(2, p, 13);
     //std::cout << p << '\n';

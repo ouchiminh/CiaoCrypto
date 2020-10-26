@@ -21,32 +21,32 @@ inline constexpr auto rotl(Int x, unsigned nbit) noexcept
 }
 
 namespace detail {
-template<class Int, size_t ...S>
+template<class Int, size_t DestSize, size_t ...S>
 inline constexpr void unpack_impl(Int src, std::uint8_t* dest, std::index_sequence<S...>)
 {
-    ((dest[S] = static_cast<std::uint8_t>(src >> (8 * (sizeof(Int) - S - 1)))), ...);
+    ((dest[S] = static_cast<std::uint8_t>(src >> (8 * (DestSize - S - 1)))), ...);
 }
-template<class Int, size_t ...S>
+template<class Int, size_t DestSize, size_t ...S>
 inline constexpr Int pack_impl(const std::uint8_t* src, std::index_sequence<S...>) noexcept
 {
-    return ((static_cast<Int>(src[S]) << (8 * (sizeof(Int) - S - 1))) | ...);
+    return ((static_cast<Int>(src[S]) << (8 * (DestSize - S - 1))) | ...);
 }
 } // namespace detail
 
-template<class Int>
+template<class Int, size_t S = sizeof(Int)>
 inline constexpr auto unpack(Int src, void* dest)
 -> std::enable_if_t<std::is_integral_v<Int>, void>
 {
     auto* ptr = reinterpret_cast<std::uint8_t*>(dest);
-    detail::unpack_impl(src, ptr, std::make_index_sequence<sizeof(Int)>{});
+    detail::unpack_impl<Int, S>(src, ptr, std::make_index_sequence<S>{});
 }
 
-template<class Int>
+template<class Int, size_t S = sizeof(Int)>
 inline constexpr auto pack(const void* src) noexcept
 -> std::enable_if_t<std::is_integral_v<Int>, Int>
 {
-    return detail::pack_impl<Int>(reinterpret_cast<const std::uint8_t*>(src),
-                                  std::make_index_sequence<sizeof(Int)>{});
+    return detail::pack_impl<Int, S>(reinterpret_cast<const std::uint8_t*>(src),
+                                  std::make_index_sequence<S>{});
 }
 
 inline std::uint32_t memassign32(std::uint8_t a,
