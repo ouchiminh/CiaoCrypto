@@ -68,7 +68,7 @@ OUCHI_TEST_CASE(test_camellia256)
 #if 0
 
 #include <iostream>
-OUCHI_TEST_CASE(camellia_sq_table_gen)
+OUCHI_TEST_CASE(camellia_sp_table_gen)
 {
     int tbl[] = { 1,2,3,4,2,3,4,1 };
     std::uint64_t mask[] = {
