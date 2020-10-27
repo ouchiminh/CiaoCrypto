@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <cstring>
 #include <cassert>
+#include <bit>
 
 namespace ciao {
 template<class Int>
@@ -65,8 +66,10 @@ inline std::uint32_t memassign32(std::uint8_t a,
     return r.i;
 }
 
+namespace big_endian {
+
 template<class Int, size_t S>
-inline auto shiftr_array(Int (&data)[S], unsigned bit_width)
+inline auto shiftr_array(Int(&data)[S], unsigned bit_width)
 -> std::enable_if_t<std::is_unsigned_v<Int> && sizeof(Int) == 1>
 {
     assert(S * CHAR_BIT >= bit_width && CHAR_BIT == 8);
@@ -76,12 +79,11 @@ inline auto shiftr_array(Int (&data)[S], unsigned bit_width)
 
     Int buf[S] = {};
 
-    constexpr std::uint8_t lowbit[] = { 0,1,3,7,15,31,63,127 };
-    auto s = lowbit[bit_shift_mod_width];
-    auto f = ~s;
+    auto f = -((Int)1 << bit_shift_mod_width);
+    auto s = ~f;
 
     for (unsigned i = 0; i < S - elm_shift_width; ++i) {
-        if(i + elm_shift_width + 1 < S)
+        if (i + elm_shift_width + 1 < S)
             buf[i + elm_shift_width + 1] |= (data[i] & s) << (CHAR_BIT - bit_shift_mod_width);
         buf[i + elm_shift_width] |= (data[i] & f) >> bit_shift_mod_width;
     }
@@ -89,7 +91,7 @@ inline auto shiftr_array(Int (&data)[S], unsigned bit_width)
 }
 
 template<class Int, size_t S>
-inline auto shiftl_array(Int (&data)[S], unsigned bit_width)
+inline auto shiftl_array(Int(&data)[S], unsigned bit_width)
 -> std::enable_if_t<std::is_unsigned_v<Int> && sizeof(Int) == 1>
 {
     assert(S * CHAR_BIT >= bit_width && CHAR_BIT == 8);
@@ -99,12 +101,11 @@ inline auto shiftl_array(Int (&data)[S], unsigned bit_width)
 
     Int buf[S] = {};
 
-    constexpr std::uint8_t highbit[] = { 0,0x80,0xc0,0xe0,0xf0,0xf8,0xfc,0xfe,0xff };
-    auto s = highbit[bit_shift_mod_width];
-    auto f = ~s;
+    Int s = -((Int)1 << (8-bit_shift_mod_width));
+    Int f = ~s;
 
     for (int i = elm_shift_width; i < (int)S; ++i) {
-        if(i - elm_shift_width - 1 >= 0)
+        if (i - elm_shift_width - 1 >= 0)
             buf[i - elm_shift_width - 1] |= (data[i] & s) >> (CHAR_BIT - bit_shift_mod_width);
         buf[i - elm_shift_width] |= (data[i] & f) << bit_shift_mod_width;
     }
@@ -163,7 +164,73 @@ inline auto rotr_array(const Int(&bits)[S], Int(&dest)[S], unsigned bit_width)
     shiftl_array(dest, w - bit_width);
     for (unsigned i = 0; i < S; ++i) dest[i] |= buf[i];
 }
+} // namespace big_endian
 
+namespace native_endian {
+
+template<class Int, size_t S>
+inline auto shiftr_array(Int(&bits)[S], unsigned bit_shift_width)
+-> std::enable_if_t<std::is_unsigned_v<Int>>
+{
+    static_assert(CHAR_BIT == 8);
+    assert(bit_shift_width < sizeof(bits) * CHAR_BIT);
+
+    constexpr bool is_big_endian = std::endian::native == std::endian::big;
+    constexpr unsigned wbit = CHAR_BIT * sizeof(Int);
+    unsigned bit_shift_mod_width = bit_shift_width & (wbit - 1);
+    unsigned elm_shift_width = bit_shift_width / wbit;
+
+    Int f = -((Int)1 << bit_shift_mod_width);   // high
+    Int s = ~f;
+    Int buf[S] = {};
+    if constexpr (is_big_endian) {
+        for (int i = 0; i < S - elm_shift_width; ++i) {
+            if (i + elm_shift_width + 1 < (int)S)
+                buf[i + elm_shift_width + 1] |= (bits[i] & s) << (wbit - bit_shift_mod_width);
+            buf[i + elm_shift_width] |= (bits[i] & f) >> bit_shift_mod_width;
+        }
+    } else {
+        for (int i = elm_shift_width; i < (int)S; ++i) {
+            if (i - (int)elm_shift_width - 1 >= 0)
+                buf[i - elm_shift_width - 1] |= (bits[i] & s) << (wbit - bit_shift_mod_width);
+            buf[i - elm_shift_width] |= (bits[i] & f) >> bit_shift_mod_width;
+        }
+    }
+    std::memcpy(bits, buf, S * sizeof(Int));
+}
+
+template<class Int, size_t S>
+inline auto shiftl_array(Int(&bits)[S], unsigned bit_shift_width)
+-> std::enable_if_t<std::is_unsigned_v<Int>>
+{
+    static_assert(CHAR_BIT == 8);
+    assert(bit_shift_width < sizeof(bits) * CHAR_BIT);
+
+    constexpr bool is_big_endian = std::endian::native == std::endian::big;
+    constexpr unsigned wbit = CHAR_BIT * sizeof(Int);
+    unsigned bit_shift_mod_width = bit_shift_width & (wbit - 1);
+    unsigned elm_shift_width = bit_shift_width / wbit;
+
+    Int s = -((Int)1 << (wbit - bit_shift_mod_width));   // high
+    Int f = ~s;
+    Int buf[S] = {};
+    if constexpr (is_big_endian) {
+        for (int i = elm_shift_width; i < (int)S; ++i) {
+            if (i - (int)elm_shift_width - 1 >= 0)
+                buf[i - elm_shift_width - 1] |= (bits[i] & s) >> (wbit - bit_shift_mod_width);
+            buf[i - elm_shift_width] |= (bits[i] & f) << bit_shift_mod_width;
+        }
+    } else {
+        for (int i = 0; i < S - elm_shift_width; ++i) {
+            if (i + elm_shift_width + 1 < S)
+                buf[i + elm_shift_width + 1] |= (bits[i] & s) >> (wbit - bit_shift_mod_width);
+            buf[i + elm_shift_width] |= (bits[i] & f) << bit_shift_mod_width;
+        }
+    }
+    std::memcpy(bits, buf, S * sizeof(Int));
+}
+
+} // namespace native_endian
 
 }
 
