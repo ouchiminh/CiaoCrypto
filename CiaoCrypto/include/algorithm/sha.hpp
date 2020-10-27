@@ -125,7 +125,7 @@ class sha {
     static constexpr unsigned block_length = 1024 / 8 / (Len <= 256 ? 2 : 1);
     using elm_type = std::conditional_t<(Len > 256), std::uint64_t, std::uint32_t>;
     elm_type h_[8];
-    size_t length_;
+    std::uint64_t length_;
     std::uint8_t buffer_[block_length];
 public:
     sha()
@@ -149,7 +149,7 @@ public:
             buffer_[length_ & lidx] = *ptr++;
             --size;
             ++length_;
-            if ((length_ & lidx) == 0) {
+            if ((length_ & lidx) == 0) [[unlikely]] {
                 process_block(buffer_);
             }
         }
@@ -172,7 +172,7 @@ public:
         }
         while ((tmplen & lidx) % last_block_m_length != 0 || !(tmplen & lidx)) {
             buffer_[tmplen++ & lidx] = 0;
-            if ((tmplen & lidx) == 0) {
+            if ((tmplen & lidx) == 0) [[unlikely]] {
                 process_block(buffer_);
             }
         }

@@ -31,6 +31,7 @@ OUCHI_TEST_CASE(test_camellia128)
     OUCHI_CHECK_EQUAL((unsigned)block[15], 0x43u);
     encoder.inv_cipher(block);
     OUCHI_CHECK_EQUAL((unsigned)block[0], 0x01);
+    OUCHI_CHECK_EQUAL((unsigned)block[15], 0x10);
 }
 
 OUCHI_TEST_CASE(test_camellia192)
@@ -45,6 +46,7 @@ OUCHI_TEST_CASE(test_camellia192)
     OUCHI_CHECK_EQUAL((unsigned)block[15], 0xb9u);
     encoder.inv_cipher(block);
     OUCHI_CHECK_EQUAL((unsigned)block[0], 0x01);
+    OUCHI_CHECK_EQUAL((unsigned)block[15], 0x10);
 }
 
 OUCHI_TEST_CASE(test_camellia256)
@@ -59,6 +61,7 @@ OUCHI_TEST_CASE(test_camellia256)
     OUCHI_CHECK_EQUAL((unsigned)block[15], 0x09u);
     encoder.inv_cipher(block);
     OUCHI_CHECK_EQUAL((unsigned)block[0], 0x01);
+    OUCHI_CHECK_EQUAL((unsigned)block[15], 0x10);
 }
 
 #ifdef NDEBUG
@@ -67,18 +70,19 @@ OUCHI_TEST_CASE(benchmark_camellia128)
 {
     using namespace std::chrono;
     constexpr int r = 1024 * 8;
-    std::vector<std::uint8_t> data(16 * 1024, 0xc5);
+    constexpr int c = 16 * 1024;
+    alignas(16) static std::uint8_t data[c] = {};
     ciao::camellia<16> encoder{ key };
     {
         auto beg = std::chrono::steady_clock::now();
         for (auto k = 0ull; k < r; ++k) {
-            for (auto i = 0ull; i < data.size(); i += 16) {
-                encoder.cipher(data.data() + i);
+            for (auto i = 0ull; i < c; i += 16) {
+                encoder.cipher(data + i);
             }
         }
 
         duration<double, std::ratio<1, 1>> dur = std::chrono::steady_clock::now() - beg;
-        std::cout << "camellia-128 enc " <<  data.size()*r / dur.count() / 1000 << " k\n";
+        std::cout << "camellia-128 enc " <<  c / dur.count() / 1000*r << " k\n";
     }
 }
 

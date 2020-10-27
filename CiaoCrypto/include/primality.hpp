@@ -30,7 +30,7 @@ Int random_prime(unsigned int r = 20)
     using int_t = Int;
     static_assert(sizeof(int_t) == sizeof(uint_t));
     namespace mp = boost::multiprecision;
-    boost::random::independent_bits_engine<std::mt19937, Bits, uint_t> rand;
+    boost::random::independent_bits_engine<std::mt19937, sizeof(uint_t), uint_t> rand;
     rand.seed(std::random_device{}());
     uint_t p;
     bool fp = false;

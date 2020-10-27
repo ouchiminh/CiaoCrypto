@@ -264,7 +264,7 @@ OUCHI_TEST_CASE(aesni128_benchmark)
         }
 
         duration<double, std::ratio<1, 1>> dur = std::chrono::steady_clock::now() - beg;
-        std::cout << "aesni-128 ecb enc " <<  data.size()*r / dur.count() / 1000'000 << " M\n";
+        std::cout << "aesni-128 ecb enc " <<  data.size() / dur.count() / 1000'000 * r << " M\n";
     }
     {
         auto beg = std::chrono::steady_clock::now();
@@ -274,7 +274,7 @@ OUCHI_TEST_CASE(aesni128_benchmark)
         }
 
         duration<double, std::ratio<1, 1>> dur = std::chrono::steady_clock::now() - beg;
-        std::cout << "aesni-128 ecb dec " <<  data.size()*r / dur.count() / 1000'000 << " M\n";
+        std::cout << "aesni-128 ecb dec " <<  data.size() / dur.count() / 1000'000 * r << " M\n";
     }
 }
 OUCHI_TEST_CASE(aesni128cbc_benchmark)
@@ -282,24 +282,27 @@ OUCHI_TEST_CASE(aesni128cbc_benchmark)
     using namespace std::chrono;
     const unsigned char key[] = "\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f";
     constexpr int r = 1024 * 256;
-    std::vector<std::uint8_t> data(16ull * 1024 * 1024 * 64, 0xc5);
-    std::vector<std::uint8_t> dest(16ull * 1024 * 1024 * 64 + 16);
+    std::vector<std::uint8_t> data(16ull * 1024, 0xc5);
+    std::vector<std::uint8_t> dest(16ull * 1024 + 16);
     ciao::cbc<ciao::aes_ni<16>> encoder(key, key);
     ciao::cbc<ciao::aes_ni<16>> decoder(key, key);
     {
         auto beg = std::chrono::steady_clock::now();
-        (void)encoder.cipher(data.data(), data.size() - 16, data.data(), data.size());
+        for (int i = 0; i < r; ++i) {
+            (void)encoder.cipher(data.data(), data.size(), dest.data(), dest.size());
+        }
 
         duration<double, std::ratio<1, 1>> dur = std::chrono::steady_clock::now() - beg;
-        std::cout << "aesni-128 cbc enc " <<  data.size() / dur.count() / 1000'000 << " M\n";
+        std::cout << "aesni-128 cbc enc " <<  data.size() / dur.count() / 1000'000 * r << " M\n";
     }
     {
         auto beg = std::chrono::steady_clock::now();
-        OUCHI_CHECK_TRUE(decoder.inv_cipher(data.data(), data.size(), dest.data(), dest.size()));
 
+        for (int i = 0; i< r; ++i) {
+            (void)encoder.inv_cipher(data.data(), data.size(), data.data(), data.size());
+        }
         duration<double, std::ratio<1, 1>> dur = std::chrono::steady_clock::now() - beg;
-        std::cout << "aesni-128 cbc dec " <<  data.size() / dur.count() / 1000'000 << " M\n";
-        OUCHI_CHECK_EQUAL(dest[0], (std::uint8_t)0xc5);
+        std::cout << "aesni-128 cbc dec " <<  data.size() / dur.count() / 1000'000 * r << " M\n";
     }
 
 }
@@ -308,15 +311,17 @@ OUCHI_TEST_CASE(aesni128ecb_pad_benchmark)
     using namespace std::chrono;
     const unsigned char key[] = "\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f";
     constexpr int r = 1024 * 256;
-    std::vector<std::uint8_t> data(16ull * 1024 * 1024 * 128, 0xc5);
-    std::vector<std::uint8_t> dest(16ull * 1024 * 1024 * 128 + 16);
+    std::vector<std::uint8_t> data(16ull * 1024, 0xc5);
+    std::vector<std::uint8_t> dest(16ull * 1024 + 16);
     ciao::ecb<ciao::aes_ni<16>> encoder(key);
     {
         auto beg = std::chrono::steady_clock::now();
-        (void)encoder.cipher(data.data(), data.size(), dest.data(), dest.size());
+        for (int i = 0; i < r; ++i) {
+            (void)encoder.cipher(data.data(), data.size(), dest.data(), dest.size());
+        }
 
         duration<double, std::ratio<1, 1>> dur = std::chrono::steady_clock::now() - beg;
-        std::cout << "aesni-128 ecb pad enc " <<  data.size() / dur.count() / 1000'000 << " M\n";
+        std::cout << "aesni-128 ecb pad enc " <<  data.size() / dur.count() / 1000'000 * r<< " M\n";
     }
 
 }

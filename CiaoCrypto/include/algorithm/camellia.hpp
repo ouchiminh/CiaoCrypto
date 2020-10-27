@@ -9,7 +9,7 @@ namespace ciao {
 
 namespace detail {
 
-inline constexpr std::uint8_t camellia_sbox[][256] = {
+alignas(8) inline constexpr std::uint8_t camellia_sbox[][256] = {
     {
         0x70, 0x82, 0x2c, 0xec, 0xb3, 0x27,
         0xc0, 0xe5, 0xe4, 0x85, 0x57, 0x35,
