@@ -361,56 +361,44 @@ public:
     }
     inline static std::uint64_t sp1(std::uint64_t y) noexcept
     {
-        std::uint64_t q = s<1>((std::uint8_t)(y >> 56));
-        std::memset(&q, (int)q, sizeof(q));
-        return q & 0xFFFFFF00FF0000FFU;
+        return s<1>((std::uint8_t)(y >> 56)) & 0xFFFFFF00FF0000FFU;
     }
     inline static std::uint64_t sp2(std::uint64_t y) noexcept
     {
-        std::uint64_t q = s<2>((std::uint8_t)(y >> 48));
-        std::memset(&q, (int)q, sizeof(q));
-        return q & 0x00FFFFFFFFFF0000;
+        return s<2>((std::uint8_t)(y >> 48)) & 0x00FFFFFFFFFF0000;
     }
     inline static std::uint64_t sp3(std::uint64_t y) noexcept
     {
-        std::uint64_t q = s<3>((std::uint8_t)(y >> 40));
-        std::memset(&q, (int)q, sizeof(q));
-        return q & 0xFF00FFFF00FFFF00;
+        return s<3>((std::uint8_t)(y >> 40)) & 0xFF00FFFF00FFFF00;
     }
     inline static std::uint64_t sp4(std::uint64_t y) noexcept
     {
-        std::uint64_t q = s<4>((std::uint8_t)(y >> 32));
-        std::memset(&q, (int)q, sizeof(q));
-        return q & 0xFFFF00FF0000FFFF;
+        return s<4>((std::uint8_t)(y >> 32)) & 0xFFFF00FF0000FFFF;
     }
     inline static std::uint64_t sp5(std::uint64_t y) noexcept
     {
-        std::uint64_t q = s<2>((std::uint8_t)(y >> 24));
-        std::memset(&q, (int)q, sizeof(q));
-        return q & 0x00FFFFFF00FFFFFF;
+        return s<2>((std::uint8_t)(y >> 24)) & 0x00FFFFFF00FFFFFF;
     }
     inline static std::uint64_t sp6(std::uint64_t y) noexcept
     {
-        std::uint64_t q = s<3>((std::uint8_t)(y >> 16));
-        std::memset(&q, (int)q, sizeof(q));
-        return q & 0xFF00FFFFFF00FFFF;
+        return s<3>((std::uint8_t)(y >> 16)) & 0xFF00FFFFFF00FFFF;
     }
     inline static std::uint64_t sp7(std::uint64_t y) noexcept
     {
-        std::uint64_t q = s<4>((std::uint8_t)(y >> 8));
-        std::memset(&q, (int)q, sizeof(q));
-        return q & 0xFFFF00FFFFFF00FF;
+        return s<4>((std::uint8_t)(y >> 8)) & 0xFFFF00FFFFFF00FF;
     }
     inline static std::uint64_t sp8(std::uint64_t y) noexcept
     {
-        std::uint64_t q = s<1>((std::uint8_t)y);
-        std::memset(&q, (int)q, sizeof(q));
-        return q & 0xFFFFFF00FFFFFF00;
+        return s<1>((std::uint8_t)y) & 0xFFFFFF00FFFFFF00;
     }
     template<int I>
-    inline static std::uint8_t s(std::uint8_t x) noexcept
+    inline static std::uint64_t s(std::uint64_t x) noexcept
     {
-        return detail::camellia_sbox[I-1][x];
+        std::uint64_t q;
+        std::memset(&q,
+                    detail::camellia_sbox[I-1][x],
+                    sizeof(q));
+        return q;
     }
 
     void normal_round(std::uint64_t* dp, unsigned i) const noexcept
