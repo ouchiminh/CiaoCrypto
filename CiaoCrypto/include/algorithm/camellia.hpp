@@ -373,19 +373,16 @@ public:
         std::uint64_t q = s<2>((std::uint8_t)(y >> 48));
         q = (q << 48)|
             (q << 40)|
-            (q << 32)|
-            (q << 24)|
-            (q << 16);
+            (q << 32);
+        q |= q >> 16;
         return q;
     }
     inline static std::uint64_t sp3(std::uint64_t y) noexcept
     {
         std::uint64_t q = s<3>((std::uint8_t)(y >> 40));
-        q = (q << 56)|
-            (q << 40)|
-            (q << 32)|
-            (q << 16)|
-            (q << 8);
+        q = (q << 40)|
+            (q << 32);
+        q |= (q >> 24) | (q << 24);
         return q;
     }
     inline static std::uint64_t sp4(std::uint64_t y) noexcept
@@ -400,11 +397,9 @@ public:
     inline static std::uint64_t sp5(std::uint64_t y) noexcept
     {
         std::uint64_t q = s<2>((std::uint8_t)(y >> 24));
-        q |= (q << 48)|
-            (q << 40)|
-            (q << 32)|
-            (q << 16)|
+        q |=(q << 16)|
             (q << 8);
+        q |= q << 32;
         return q;
     }
     inline static std::uint64_t sp6(std::uint64_t y) noexcept
@@ -432,10 +427,8 @@ public:
         std::uint64_t q = s<1>((std::uint8_t)y);
         q = (q << 56)|
             (q << 48)|
-            (q << 40)|
-            (q << 24)|
-            (q << 16)|
-            (q << 8);
+            (q << 40);
+        q |= q >> 32;
         return q;
     }
     template<int I>
