@@ -712,45 +712,13 @@ public:
     inline static std::uint64_t sp(std::uint64_t y) noexcept
     {
         return
-            sp1(y) ^ sp2(y) ^ sp3(y) ^ sp4(y) ^
-            sp5(y) ^ sp6(y) ^ sp7(y) ^ sp8(y);
-    }
-    inline static std::uint64_t sp1(std::uint64_t y) noexcept
-    {
-        return s<1>(0xFF &(y >> 56));
-    }
-    inline static std::uint64_t sp2(std::uint64_t y) noexcept
-    {
-        return s<2>(0xFF &(y >> 48));
-    }
-    inline static std::uint64_t sp3(std::uint64_t y) noexcept
-    {
-        return s<3>(0xFF &(y >> 40));
-    }
-    inline static std::uint64_t sp4(std::uint64_t y) noexcept
-    {
-        return s<4>(0xFF &(y >> 32));
-    }
-    inline static std::uint64_t sp5(std::uint64_t y) noexcept
-    {
-        return s<5>(0xFF &(y >> 24));
-    }
-    inline static std::uint64_t sp6(std::uint64_t y) noexcept
-    {
-        return s<6>(0xFF &(y >> 16));
-    }
-    inline static std::uint64_t sp7(std::uint64_t y) noexcept
-    {
-        return s<7>(0xFF &(y >> 8));
-    }
-    inline static std::uint64_t sp8(std::uint64_t y) noexcept
-    {
-        return s<8>(0xFF &y);
+            sp<1>(y) ^ sp<2>(y) ^ sp<3>(y) ^ sp<4>(y) ^
+            sp<5>(y) ^ sp<6>(y) ^ sp<7>(y) ^ sp<8>(y);
     }
     template<int I>
-    inline static std::uint64_t s(std::uint64_t x) noexcept
+    inline static std::uint64_t sp(std::uint64_t x) noexcept
     {
-        return detail::camellia_spbox[I-1][x];
+        return detail::camellia_spbox[I-1][0xFF & (x >> (8 * (8 - I)))];
     }
 
     void normal_round(std::uint64_t* dp, unsigned i) const noexcept
