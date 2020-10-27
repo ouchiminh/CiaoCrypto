@@ -64,12 +64,37 @@ OUCHI_TEST_CASE(test_camellia256)
     OUCHI_CHECK_EQUAL((unsigned)block[15], 0x10);
 }
 
+#if 0
+
+#include <iostream>
+OUCHI_TEST_CASE(camellia_sq_table_gen)
+{
+    int tbl[] = { 1,2,3,4,2,3,4,1 };
+    std::uint64_t mask[] = {
+        0xFFFFFF00FF0000FF,0x00FFFFFFFFFF0000,0xFF00FFFF00FFFF00,0xFFFF00FF0000FFFF,
+        0x00FFFFFF00FFFFFF,0xFF00FFFFFF00FFFF,0xFFFF00FFFFFF00FF,0xFFFFFF00FFFFFF00
+    };
+
+    for (int i = 0; i < 8; ++i) {
+        std::uint64_t q;
+        std::cout << '{' << '\n';
+        for (int j = 0; j < 256; ++j) {
+            std::memset(&q, ciao::detail::camellia_sbox[tbl[i]-1][j], sizeof(q));
+            std::printf("0x%016llx, ", q & mask[i]);
+            if (((j+1) & 0x3) == 0) std::cout << '\n';
+        }
+        std::cout << "\n},\n";
+    }
+}
+
+#endif
+
 #ifdef NDEBUG
 
 OUCHI_TEST_CASE(benchmark_camellia128)
 {
     using namespace std::chrono;
-    constexpr int r = 1024 * 8;
+    constexpr int r = 1024 * 16;
     constexpr int c = 16 * 1024;
     alignas(16) static std::uint8_t data[c] = {};
     ciao::camellia<16> encoder{ key };
