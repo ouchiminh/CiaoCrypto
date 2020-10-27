@@ -199,12 +199,12 @@ struct camellia_sigma_t {
     } sigma[6];
     camellia_sigma_t()
     {
-        unpack(0xA09E667F3BCC908B, sigma[0].b);
-        unpack(0xB67AE8584CAA73B2, sigma[1].b);
-        unpack(0xC6EF372FE94F82BE, sigma[2].b);
-        unpack(0x54FF53A5F1D36F1C, sigma[3].b);
-        unpack(0x10E527FADE682D1D, sigma[4].b);
-        unpack(0xB05688C2B3E6C1FD, sigma[5].b);
+        sigma[0].q = 0xA09E667F3BCC908B;
+        sigma[1].q = 0xB67AE8584CAA73B2;
+        sigma[2].q = 0xC6EF372FE94F82BE;
+        sigma[3].q = 0x54FF53A5F1D36F1C;
+        sigma[4].q = 0x10E527FADE682D1D;
+        sigma[5].q = 0xB05688C2B3E6C1FD;
     }
     std::uint64_t operator[](unsigned int i) const noexcept { return sigma[i].q; }
 } const camellia_sigma;
@@ -229,10 +229,16 @@ public:
     camellia() = default;
     void key_schedule(const std::uint8_t* key) noexcept
     {
+        using namespace native_endian;
         std::uint64_t klr[4];
         std::uint64_t ka[2];
         std::uint64_t kb[2];
-        std::memcpy(klr, key, S);
+        std::uint64_t kbuf[2];
+        std::uint64_t kl[2];
+        std::uint64_t kr[2];
+        for (int i = 0; i < S/8; ++i) {
+            klr[i] = pack<std::uint64_t>(key + i * 8);
+        }
         if constexpr (S == 16)
             std::memset(klr+2, 0, 16);
         else if constexpr (S == 24)
@@ -247,13 +253,10 @@ public:
         ka[1] ^= klr[1];
         ka[1] ^= f(ka[0], detail::camellia_sigma[2]);
         ka[0] ^= f(ka[1], detail::camellia_sigma[3]);
-        // 副鍵
-        std::uint8_t kl8[16], kr8[16], ka8[16], kb8[16], kbuf[16];
-        std::memcpy(kl8, klr, 16);
+        std::memcpy(kl, klr, 16);
+        std::memcpy(kr, klr + 2, 16);
         std::memcpy(kw_, klr, 16); // init
-        std::memcpy(kr8, klr+2, 16);
-        std::memcpy(ka8, ka, 16);
-
+        // 副鍵
         if constexpr (S > 16) {
             std::memcpy(kb, klr+2, 16);
             kb[0] ^= ka[0];
@@ -261,72 +264,72 @@ public:
 
             kb[1] ^= f(kb[0], detail::camellia_sigma[4]);
             kb[0] ^= f(kb[1], detail::camellia_sigma[5]);
-            std::memcpy(kb8, kb, 16);
+            std::memcpy(kb, kb, 16);
             
             // 副鍵 192 256 bit
             // kb
-            std::memcpy(k_, kb8, 16); // 1,2
-            rotl_array(kb8, kbuf, 30); // 7,8
+            std::memcpy(k_, kb, 16); // 1,2
+            rotl_array(kb, kbuf, 30); // 7,8
             std::memcpy(k_+6, kbuf, 16);
-            rotl_array(kb8, kbuf, 60); // 15,16
+            rotl_array(kb, kbuf, 60); // 15,16
             std::memcpy(k_+14, kbuf, 16);
-            rotl_array(kb8, kbuf, 111); // last
+            rotl_array(kb, kbuf, 111); // last
             std::memcpy(kw_+2, kbuf, 16);
             // ka
-            rotl_array(ka8, kbuf, 15); // 5,6
+            rotl_array(ka, kbuf, 15); // 5,6
             std::memcpy(k_+4, kbuf, 16);
-            rotl_array(ka8, kbuf, 45); // 11,12
+            rotl_array(ka, kbuf, 45); // 11,12
             std::memcpy(k_+10, kbuf, 16);
-            rotl_array(ka8, kbuf, 77); // fl,fl_inv
+            rotl_array(ka, kbuf, 77); // fl,fl_inv
             std::memcpy(kl_+4, kbuf, 16);
-            rotl_array(ka8, kbuf, 94); // 21,22
+            rotl_array(ka, kbuf, 94); // 21,22
             std::memcpy(k_+20, kbuf, 16);
             // kl
-            rotl_array(kl8, kbuf, 45);  // 9,10
+            rotl_array(kl, kbuf, 45);  // 9,10
             std::memcpy(k_+8, kbuf, 16);
-            rotl_array(kl8, kbuf, 60);  // fl,fl_inv
+            rotl_array(kl, kbuf, 60);  // fl,fl_inv
             std::memcpy(kl_+2, kbuf, 16);
-            rotl_array(kl8, kbuf, 77);  // 17,18
+            rotl_array(kl, kbuf, 77);  // 17,18
             std::memcpy(k_+16, kbuf, 16);
-            rotl_array(kl8, kbuf, 111);  // 23,24
+            rotl_array(kl, kbuf, 111);  // 23,24
             std::memcpy(k_+22, kbuf, 16);
             // kr
-            rotl_array(kr8, kbuf, 15); // 3,4
+            rotl_array(kr, kbuf, 15); // 3,4
             std::memcpy(k_+2, kbuf, 16);
-            rotl_array(kr8, kbuf, 30); // fl, fl_inv
+            rotl_array(kr, kbuf, 30); // fl, fl_inv
             std::memcpy(kl_, kbuf, 16);
-            rotl_array(kr8, kbuf, 60); // 13,14
+            rotl_array(kr, kbuf, 60); // 13,14
             std::memcpy(k_+12, kbuf, 16);
-            rotl_array(kr8, kbuf, 94); // 19,20
+            rotl_array(kr, kbuf, 94); // 19,20
             std::memcpy(k_+18, kbuf, 16);
         } else {
             // 副鍵 128 bit
             // ka
-            std::memcpy(k_, ka8, 16); // 1,2
-            rotl_array(ka8, kbuf, 15); // 5,6
+            std::memcpy(k_, ka, 16); // 1,2
+            rotl_array(ka, kbuf, 15); // 5,6
             std::memcpy(k_ + 4, kbuf, 16);
-            rotl_array(ka8, kbuf, 30); // fl,fl_inv
+            rotl_array(ka, kbuf, 30); // fl,fl_inv
             std::memcpy(kl_, kbuf, 16);
-            rotl_array(ka8, kbuf, 45); // 9
+            rotl_array(ka, kbuf, 45); // 9
             std::memcpy(k_ + 8, kbuf, 8);
-            rotl_array(ka8, kbuf, 60); // 11,12
+            rotl_array(ka, kbuf, 60); // 11,12
             std::memcpy(k_ + 10, kbuf, 16);
-            rotl_array(ka8, kbuf, 94); // 15,16
+            rotl_array(ka, kbuf, 94); // 15,16
             std::memcpy(k_ + 14, kbuf, 16);
-            rotl_array(ka8, kbuf, 111); // last
+            rotl_array(ka, kbuf, 111); // last
             std::memcpy(kw_ + 2, kbuf, 16);
             // kl
-            rotl_array(kl8, kbuf, 15); // 3,4
+            rotl_array(kl, kbuf, 15); // 3,4
             std::memcpy(k_ + 2, kbuf, 16);
-            rotl_array(kl8, kbuf, 45); // 7,8
+            rotl_array(kl, kbuf, 45); // 7,8
             std::memcpy(k_ + 6, kbuf, 16);
-            rotl_array(kl8, kbuf, 60); // 10
-            std::memcpy(k_ + 9, kbuf + 8, 8);
-            rotl_array(kl8, kbuf, 77); // fl, fl_inv
+            rotl_array(kl, kbuf, 60); // 10
+            std::memcpy(k_ + 9, kbuf + 1, 8);
+            rotl_array(kl, kbuf, 77); // fl, fl_inv
             std::memcpy(kl_ + 2, kbuf, 16);
-            rotl_array(kl8, kbuf, 94); // 13,14
+            rotl_array(kl, kbuf, 94); // 13,14
             std::memcpy(k_ + 12, kbuf, 16);
-            rotl_array(kl8, kbuf, 111); // 17,18
+            rotl_array(kl, kbuf, 111); // 17,18
             std::memcpy(k_ + 16, kbuf, 16);
         }
     }
@@ -337,67 +340,44 @@ public:
     }
     inline static std::uint64_t fl(std::uint64_t x, std::uint64_t k) noexcept
     {
-        union {
-            union {
-                std::uint32_t d;
-                std::uint8_t b[4];
-            } dw[2];
-            std::uint64_t q;
-        }xd,kd, y;
-        xd.q = x;
-        kd.q = k;
-        // yr
-        y.dw[1].d = xd.dw[0].d & kd.dw[0].d;
-        rotl_array(y.dw[1].b, 1);
-        y.dw[1].d ^= xd.dw[1].d;
-        // yl
-        y.dw[0].d = (y.dw[1].d | kd.dw[1].d) ^ xd.dw[0].d;
-        return y.q;
+        std::uint64_t y = 0;
+        y |= lower_half_bits(rotl((std::uint32_t)((x & k) >> 32), 1) ^ x);
+        y |= higher_half_bits(((y | k) << 32) ^ x);
+        return y;
+
     }
     inline static std::uint64_t inv_fl(std::uint64_t y, std::uint64_t k) noexcept
     {
-        union {
-            union {
-                std::uint32_t d;
-                std::uint8_t b[4];
-            } dw[2];
-            std::uint64_t q;
-        }yd,kd, x;
-        yd.q = y;
-        kd.q = k;
-        // xl
-        x.dw[0].d = (yd.dw[1].d | kd.dw[1].d) ^ yd.dw[0].d;
-        // xr
-        x.dw[1].d = x.dw[0].d & kd.dw[0].d;
-        rotl_array(x.dw[1].b, 1);
-        x.dw[1].d ^= yd.dw[1].d;
-        return x.q;
+        std::uint64_t x = 0;
+        x |= ((y | k) ^ (y >> 32)) << 32;
+        x |= lower_half_bits(rotl((std::uint32_t)((x & k) >> 32), 1) ^ y);
+        return x;
     }
     inline static std::uint64_t s(std::uint64_t x) noexcept
     {
         std::uint8_t* p8 = (std::uint8_t*)&x;
-        p8[0] = s<1>(p8[0]);
-        p8[1] = s<2>(p8[1]);
-        p8[2] = s<3>(p8[2]);
-        p8[3] = s<4>(p8[3]);
-        p8[4] = s<2>(p8[4]);
-        p8[5] = s<3>(p8[5]);
-        p8[6] = s<4>(p8[6]);
-        p8[7] = s<1>(p8[7]);
+        p8[7-0] = s<1>(p8[7-0]);
+        p8[7-1] = s<2>(p8[7-1]);
+        p8[7-2] = s<3>(p8[7-2]);
+        p8[7-3] = s<4>(p8[7-3]);
+        p8[7-4] = s<2>(p8[7-4]);
+        p8[7-5] = s<3>(p8[7-5]);
+        p8[7-6] = s<4>(p8[7-6]);
+        p8[7-7] = s<1>(p8[7-7]);
         return x;
     }
     inline static std::uint64_t p(std::uint64_t x) noexcept
     {
         std::uint8_t* p8 = (std::uint8_t*)&x;
         union { std::uint64_t q; std::uint8_t b[8]; } r;
-        r.b[0] = p8[0] ^ p8[2] ^ p8[3] ^ p8[5] ^ p8[6] ^ p8[7];
-        r.b[1] = p8[0] ^ p8[1] ^ p8[3] ^ p8[4] ^ p8[6] ^ p8[7];
-        r.b[2] = p8[0] ^ p8[1] ^ p8[2] ^ p8[4] ^ p8[5] ^ p8[7];
-        r.b[3] = p8[1] ^ p8[2] ^ p8[3] ^ p8[4] ^ p8[5] ^ p8[6];
-        r.b[4] = p8[0] ^ p8[1] ^ p8[5] ^ p8[6] ^ p8[7];
-        r.b[5] = p8[1] ^ p8[2] ^ p8[4] ^ p8[6] ^ p8[7];
-        r.b[6] = p8[2] ^ p8[3] ^ p8[4] ^ p8[5] ^ p8[7];
-        r.b[7] = p8[0] ^ p8[3] ^ p8[4] ^ p8[5] ^ p8[6];
+        r.b[7-0] = p8[7-0] ^ p8[7-2] ^ p8[7-3] ^ p8[7-5] ^ p8[7-6] ^ p8[7-7];
+        r.b[7-1] = p8[7-0] ^ p8[7-1] ^ p8[7-3] ^ p8[7-4] ^ p8[7-6] ^ p8[7-7];
+        r.b[7-2] = p8[7-0] ^ p8[7-1] ^ p8[7-2] ^ p8[7-4] ^ p8[7-5] ^ p8[7-7];
+        r.b[7-3] = p8[7-1] ^ p8[7-2] ^ p8[7-3] ^ p8[7-4] ^ p8[7-5] ^ p8[7-6];
+        r.b[7-4] = p8[7-0] ^ p8[7-1] ^ p8[7-5] ^ p8[7-6] ^ p8[7-7];
+        r.b[7-5] = p8[7-1] ^ p8[7-2] ^ p8[7-4] ^ p8[7-6] ^ p8[7-7];
+        r.b[7-6] = p8[7-2] ^ p8[7-3] ^ p8[7-4] ^ p8[7-5] ^ p8[7-7];
+        r.b[7-7] = p8[7-0] ^ p8[7-3] ^ p8[7-4] ^ p8[7-5] ^ p8[7-6];
         return r.q;
     }
     template<int I>
@@ -433,8 +413,11 @@ public:
     void cipher(std::uint8_t* data) const noexcept
     {
         auto dp = reinterpret_cast<std::uint64_t*>(data);
-        dp[0] ^= kw_[0];
+        dp[0] = pack<std::uint64_t>(data);
+        dp[1] = pack<std::uint64_t>(data+8);
+
         dp[1] ^= kw_[1];
+        dp[0] ^= kw_[0];
 
         for (unsigned int i = 0u; i < nr - 6;) {
             normal_round(dp, i++);
@@ -451,13 +434,18 @@ public:
         normal_round(dp, nr-2);
         normal_round(dp, nr-1);
         std::swap(dp[0], dp[1]);
-        dp[0] ^= kw_[2];
         dp[1] ^= kw_[3];
+        dp[0] ^= kw_[2];
 
+        unpack(dp[0], data);
+        unpack(dp[1], data+8);
     }
     void inv_cipher(std::uint8_t* data) const noexcept
     {
         auto dp = reinterpret_cast<std::uint64_t*>(data);
+        dp[0] = pack<std::uint64_t>(data);
+        dp[1] = pack<std::uint64_t>(data+8);
+
         dp[0] ^= kw_[2];
         dp[1] ^= kw_[3];
 
@@ -478,6 +466,9 @@ public:
         std::swap(dp[0], dp[1]);
         dp[0] ^= kw_[0];
         dp[1] ^= kw_[1];
+
+        unpack(dp[0], data);
+        unpack(dp[1], data+8);
     }
 //private:
     std::uint64_t kw_[t];
