@@ -362,74 +362,50 @@ public:
     inline static std::uint64_t sp1(std::uint64_t y) noexcept
     {
         std::uint64_t q = s<1>((std::uint8_t)(y >> 56));
-        q |=(q << 56)|
-            (q << 48)|
-            (q << 40)|
-            (q << 24);
-        return q;
+        std::memset(&q, (int)q, sizeof(q));
+        return q & 0xFFFFFF00FF0000FFU;
     }
     inline static std::uint64_t sp2(std::uint64_t y) noexcept
     {
         std::uint64_t q = s<2>((std::uint8_t)(y >> 48));
-        q = (q << 48)|
-            (q << 40)|
-            (q << 32);
-        q |= q >> 16;
-        return q;
+        std::memset(&q, (int)q, sizeof(q));
+        return q & 0x00FFFFFFFFFF0000;
     }
     inline static std::uint64_t sp3(std::uint64_t y) noexcept
     {
         std::uint64_t q = s<3>((std::uint8_t)(y >> 40));
-        q = (q << 40)|
-            (q << 32);
-        q |= (q >> 24) | (q << 24);
-        return q;
+        std::memset(&q, (int)q, sizeof(q));
+        return q & 0xFF00FFFF00FFFF00;
     }
     inline static std::uint64_t sp4(std::uint64_t y) noexcept
     {
         std::uint64_t q = s<4>((std::uint8_t)(y >> 32));
-        q |=(q << 56)|
-            (q << 48)|
-            (q << 32)|
-            (q << 8);
-        return q;
+        std::memset(&q, (int)q, sizeof(q));
+        return q & 0xFFFF00FF0000FFFF;
     }
     inline static std::uint64_t sp5(std::uint64_t y) noexcept
     {
         std::uint64_t q = s<2>((std::uint8_t)(y >> 24));
-        q |=(q << 16)|
-            (q << 8);
-        q |= q << 32;
-        return q;
+        std::memset(&q, (int)q, sizeof(q));
+        return q & 0x00FFFFFF00FFFFFF;
     }
     inline static std::uint64_t sp6(std::uint64_t y) noexcept
     {
         std::uint64_t q = s<3>((std::uint8_t)(y >> 16));
-        q |= (q << 56)|
-            (q << 40)|
-            (q << 32)|
-            (q << 24)|
-            (q << 8);
-        return q;
+        std::memset(&q, (int)q, sizeof(q));
+        return q & 0xFF00FFFFFF00FFFF;
     }
     inline static std::uint64_t sp7(std::uint64_t y) noexcept
     {
         std::uint64_t q = s<4>((std::uint8_t)(y >> 8));
-        q |= (q << 56)|
-            (q << 48)|
-            (q << 32)|
-            (q << 24)|
-            (q << 16);
-        return q;
+        std::memset(&q, (int)q, sizeof(q));
+        return q & 0xFFFF00FFFFFF00FF;
     }
     inline static std::uint64_t sp8(std::uint64_t y) noexcept
     {
         std::uint64_t q = s<1>((std::uint8_t)y);
-        q = (q << 56)|
-            (q << 48)|
-            (q << 40);
-        q |= q >> 32;
-        return q;
+        std::memset(&q, (int)q, sizeof(q));
+        return q & 0xFFFFFF00FFFFFF00;
     }
     template<int I>
     inline static std::uint8_t s(std::uint8_t x) noexcept
