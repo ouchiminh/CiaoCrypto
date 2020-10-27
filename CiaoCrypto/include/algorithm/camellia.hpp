@@ -703,15 +703,15 @@ public:
     inline static std::uint64_t fl(std::uint64_t x, std::uint64_t k) noexcept
     {
         std::uint64_t y;
-        y = lower_half_bits(rotl((std::uint32_t)((x & k) >> 32), 1) ^ x);
-        y |= higher_half_bits(((y | k) << 32) ^ x);
+        y = (rotl((std::uint32_t)((x & k) >> 32), 1) ^ lower_half_bits(x));
+        y |= (((y | k) << 32) ^ higher_half_bits(x));
         return y;
     }
     inline static std::uint64_t inv_fl(std::uint64_t y, std::uint64_t k) noexcept
     {
         std::uint64_t x;
-        x = higher_half_bits(((y | k) << 32) ^ y);
-        x |= lower_half_bits(rotl((std::uint32_t)((x & k) >> 32), 1) ^ y);
+        x = (((y | k) << 32) ^ higher_half_bits(y));
+        x |= (rotl((std::uint32_t)((x & k) >> 32), 1) ^ lower_half_bits(y));
         return x;
     }
     inline static std::uint64_t sp(std::uint64_t y) noexcept
