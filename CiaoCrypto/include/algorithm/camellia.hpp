@@ -583,6 +583,12 @@ public:
         key_schedule(key);
     }
     camellia() = default;
+    ~camellia()
+    {
+        std::fill((volatile std::uint64_t*)kw_, (volatile std::uint64_t*)kw_ + t, 0ull);
+        std::fill((volatile std::uint64_t*)k_, (volatile std::uint64_t*)k_ + u, 0ull);
+        std::fill((volatile std::uint64_t*)kl_, (volatile std::uint64_t*)kl_ + v, 0ull);
+    }
     void key_schedule(const std::uint8_t* key) noexcept
     {
         using namespace native_endian;
@@ -692,7 +698,7 @@ public:
 
     inline static std::uint64_t f(std::uint64_t x, std::uint64_t k) noexcept
     {
-        return sp(x^k);
+        return sp(x ^ k);
     }
     inline static std::uint64_t fl(std::uint64_t x, std::uint64_t k) noexcept
     {
@@ -700,7 +706,6 @@ public:
         y = lower_half_bits(rotl((std::uint32_t)((x & k) >> 32), 1) ^ x);
         y |= higher_half_bits(((y | k) << 32) ^ x);
         return y;
-
     }
     inline static std::uint64_t inv_fl(std::uint64_t y, std::uint64_t k) noexcept
     {
@@ -792,12 +797,12 @@ public:
             normal_round(dp, --i);
             dec_special_round(dp, --i);
         }
-        normal_round(dp, 5);
-        normal_round(dp, 4);
-        normal_round(dp, 3);
-        normal_round(dp, 2);
-        normal_round(dp, 1);
-        normal_round(dp, 0);
+        normal_round(dp, 5u);
+        normal_round(dp, 4u);
+        normal_round(dp, 3u);
+        normal_round(dp, 2u);
+        normal_round(dp, 1u);
+        normal_round(dp, 0u);
         std::swap(dp[0], dp[1]);
         dp[0] ^= kw_[0];
         dp[1] ^= kw_[1];
