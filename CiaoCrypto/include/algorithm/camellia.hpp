@@ -549,21 +549,20 @@ inline constexpr std::uint64_t camellia_spbox[][256] = {
 };
 
 struct camellia_sigma_t {
-    union {
-        std::uint64_t q;
-        std::uint8_t b[8];
-    } sigma[6];
-    camellia_sigma_t()
-    {
-        sigma[0].q = 0xA09E667F3BCC908B;
-        sigma[1].q = 0xB67AE8584CAA73B2;
-        sigma[2].q = 0xC6EF372FE94F82BE;
-        sigma[3].q = 0x54FF53A5F1D36F1C;
-        sigma[4].q = 0x10E527FADE682D1D;
-        sigma[5].q = 0xB05688C2B3E6C1FD;
-    }
-    std::uint64_t operator[](unsigned int i) const noexcept { return sigma[i].q; }
-} const camellia_sigma;
+    std::uint64_t sigma[6];
+    constexpr camellia_sigma_t()
+        : sigma{
+            0xA09E667F3BCC908B,
+            0xB67AE8584CAA73B2,
+            0xC6EF372FE94F82BE,
+            0x54FF53A5F1D36F1C,
+            0x10E527FADE682D1D,
+            0xB05688C2B3E6C1FD
+        }
+    { }
+    constexpr std::uint64_t operator[](unsigned int i) const noexcept { return sigma[i]; }
+};
+inline constexpr camellia_sigma_t camellia_sigma;
 }
 
 template<size_t S, class = void>
@@ -783,7 +782,7 @@ public:
         unpack(dp[1], data);
         unpack(dp[0], data+8);
     }
-//private:
+private:
     std::uint64_t kw_[t];
     std::uint64_t k_[u];
     std::uint64_t kl_[v];

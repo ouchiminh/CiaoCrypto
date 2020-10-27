@@ -218,8 +218,6 @@ private:
     }
     alignas(__m128i) union {
         std::uint8_t bctr[A::block_size];
-        std::uint16_t wctr[A::block_size / 2];
-        std::uint32_t dwctr[A::block_size / 4];
         std::uint64_t qwctr[A::block_size / 8];
     } counter_, state_;
 };
