@@ -228,7 +228,7 @@ template<detail::block_cipher_algorithm A, class To, class = void>
 class stream_like_ctr;
 
 template<detail::block_cipher_algorithm A, class To>
-class stream_like_ctr<A, To, std::enable_if_t<(A::block_size > 8) && (A::block_size >= sizeof(To)) && std::is_trivially_constructible_v<To>, void>>
+class stream_like_ctr<A, To, std::enable_if_t<(A::block_size > 8) && (A::block_size >= sizeof(To)) && std::is_trivially_constructible_v<To> && (A::block_size % sizeof(To) == 0), void>>
 {
 public:
     stream_like_ctr(const void* nonce,

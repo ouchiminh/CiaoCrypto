@@ -710,7 +710,7 @@ public:
     inline static std::uint64_t inv_fl(std::uint64_t y, std::uint64_t k) noexcept
     {
         std::uint64_t x;
-        x = ((y | k) ^ (y >> 32)) << 32;
+        x = higher_half_bits(((y | k) << 32) ^ y);
         x |= lower_half_bits(rotl((std::uint32_t)((x & k) >> 32), 1) ^ y);
         return x;
     }
@@ -726,63 +726,39 @@ public:
         return detail::camellia_spbox[I-1][0xFF & (x >> (8 * (8 - I)))];
     }
 
-    void normal_round(std::uint64_t* dp, unsigned i) const noexcept
-    {
-        std::uint64_t l = dp[0];
-        dp[0] = dp[1] ^ f(l, k_[i]);
-        dp[1] = l;
-    }
-    void enc_special_round(std::uint64_t* dp, unsigned i) const noexcept
-    {
-            std::uint64_t
-                l = dp[1] ^ f(dp[0], k_[i]),
-                r = dp[0];
-            dp[0] = fl(l, kl_[(i+1)/3-2]);
-            dp[1] = inv_fl(r, kl_[(i+1)/3-1]);
-    }
-    void dec_special_round(std::uint64_t* dp, unsigned i) const noexcept
-    {
-            std::uint64_t
-                l = dp[1] ^ f(dp[0], k_[i]),
-                r = dp[0];
-            dp[0] = fl(l, kl_[(i)/3-1]);
-            dp[1] = inv_fl(r, kl_[(i)/3-2]);
-    }
-
     void cipher(std::uint8_t* data) const noexcept
     {
-        auto dp = reinterpret_cast<std::uint64_t*>(data);
-        dp[0] = pack<std::uint64_t>(data);
-        dp[1] = pack<std::uint64_t>(data+8);
-
-        dp[1] ^= kw_[1];
-        dp[0] ^= kw_[0];
+        std::uint64_t dp[2];
+        std::memcpy(dp, kw_, 16);
+        dp[0] ^= pack<std::uint64_t>(data);
+        dp[1] ^= pack<std::uint64_t>(data+8);
 
         for (unsigned int i = 0u; i < nr - 6;) {
-            normal_round(dp, i++);
-            normal_round(dp, i++);
-            normal_round(dp, i++);
-            normal_round(dp, i++);
-            normal_round(dp, i++);
-            enc_special_round(dp, i++);
+            dp[1] ^= f(dp[0], k_[i++]);
+            dp[0] ^= f(dp[1], k_[i++]);
+            dp[1] ^= f(dp[0], k_[i++]);
+            dp[0] ^= f(dp[1], k_[i++]);
+            dp[1] ^= f(dp[0], k_[i++]);
+            dp[0] ^= f(dp[1], k_[i++]);
+            dp[0] = fl(dp[0], kl_[(i)/3-2]);
+            dp[1] = inv_fl(dp[1], kl_[(i+1)/3-1]);
         }
-        normal_round(dp, nr-6);
-        normal_round(dp, nr-5);
-        normal_round(dp, nr-4);
-        normal_round(dp, nr-3);
-        normal_round(dp, nr-2);
-        normal_round(dp, nr-1);
-        std::swap(dp[0], dp[1]);
+        dp[1] ^= f(dp[0], k_[nr - 6]);
+        dp[0] ^= f(dp[1], k_[nr - 5]);
+        dp[1] ^= f(dp[0], k_[nr - 4]);
+        dp[0] ^= f(dp[1], k_[nr - 3]);
+        dp[1] ^= f(dp[0], k_[nr - 2]);
+        dp[0] ^= f(dp[1], k_[nr - 1]);
 
-        dp[1] ^= kw_[3];
-        dp[0] ^= kw_[2];
+        dp[0] ^= kw_[3];
+        dp[1] ^= kw_[2];
 
-        unpack(dp[0], data);
-        unpack(dp[1], data+8);
+        unpack(dp[1], data);
+        unpack(dp[0], data+8);
     }
     void inv_cipher(std::uint8_t* data) const noexcept
     {
-        auto dp = reinterpret_cast<std::uint64_t*>(data);
+        std::uint64_t dp[2];
         dp[0] = pack<std::uint64_t>(data);
         dp[1] = pack<std::uint64_t>(data+8);
 
@@ -790,25 +766,26 @@ public:
         dp[1] ^= kw_[3];
 
         for (int i = nr; i > 6;) {
-            normal_round(dp, --i);
-            normal_round(dp, --i);
-            normal_round(dp, --i);
-            normal_round(dp, --i);
-            normal_round(dp, --i);
-            dec_special_round(dp, --i);
+            dp[1] ^= f(dp[0], k_[--i]);
+            dp[0] ^= f(dp[1], k_[--i]);
+            dp[1] ^= f(dp[0], k_[--i]);
+            dp[0] ^= f(dp[1], k_[--i]);
+            dp[1] ^= f(dp[0], k_[--i]);
+            dp[0] ^= f(dp[1], k_[--i]);
+            dp[0] = fl(dp[0], kl_[(i)/3-1]);
+            dp[1] = inv_fl(dp[1], kl_[(i)/3-2]);
         }
-        normal_round(dp, 5u);
-        normal_round(dp, 4u);
-        normal_round(dp, 3u);
-        normal_round(dp, 2u);
-        normal_round(dp, 1u);
-        normal_round(dp, 0u);
-        std::swap(dp[0], dp[1]);
-        dp[0] ^= kw_[0];
-        dp[1] ^= kw_[1];
+        dp[1] ^= f(dp[0], k_[5]);
+        dp[0] ^= f(dp[1], k_[4]);
+        dp[1] ^= f(dp[0], k_[3]);
+        dp[0] ^= f(dp[1], k_[2]);
+        dp[1] ^= f(dp[0], k_[1]);
+        dp[0] ^= f(dp[1], k_[0]);
+        dp[1] ^= kw_[0];
+        dp[0] ^= kw_[1];
 
-        unpack(dp[0], data);
-        unpack(dp[1], data+8);
+        unpack(dp[1], data);
+        unpack(dp[0], data+8);
     }
 //private:
     std::uint64_t kw_[t];
