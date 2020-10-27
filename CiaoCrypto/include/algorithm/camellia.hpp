@@ -739,8 +739,8 @@ public:
             dp[0] ^= f(dp[1], k_[i++]);
             dp[1] ^= f(dp[0], k_[i++]);
             dp[0] ^= f(dp[1], k_[i++]);
-            dp[0] = fl(dp[0], kl_[(i)/3-2]);
-            dp[1] = inv_fl(dp[1], kl_[(i+1)/3-1]);
+            dp[0] = fl(dp[0], kl_[i/3-2]);
+            dp[1] = inv_fl(dp[1], kl_[i/3-1]);
         }
         dp[1] ^= f(dp[0], k_[nr - 6]);
         dp[0] ^= f(dp[1], k_[nr - 5]);
@@ -768,8 +768,8 @@ public:
             dp[0] ^= f(dp[1], k_[--i]);
             dp[1] ^= f(dp[0], k_[--i]);
             dp[0] ^= f(dp[1], k_[--i]);
-            dp[0] = fl(dp[0], kl_[(i)/3-1]);
-            dp[1] = inv_fl(dp[1], kl_[(i)/3-2]);
+            dp[0] = fl(dp[0], kl_[i/3-1]);
+            dp[1] = inv_fl(dp[1], kl_[i/3-2]);
         }
         dp[1] ^= f(dp[0], k_[5]);
         dp[0] ^= f(dp[1], k_[4]);
