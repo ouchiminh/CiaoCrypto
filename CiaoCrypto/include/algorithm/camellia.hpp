@@ -336,7 +336,7 @@ public:
 
     inline static std::uint64_t f(std::uint64_t x, std::uint64_t k) noexcept
     {
-        return p(s(x^k));
+        return sp(x^k);
     }
     inline static std::uint64_t fl(std::uint64_t x, std::uint64_t k) noexcept
     {
@@ -353,32 +353,90 @@ public:
         x |= lower_half_bits(rotl((std::uint32_t)((x & k) >> 32), 1) ^ y);
         return x;
     }
-    inline static std::uint64_t s(std::uint64_t x) noexcept
+    inline static std::uint64_t sp(std::uint64_t y) noexcept
     {
-        std::uint8_t* p8 = (std::uint8_t*)&x;
-        p8[7-0] = s<1>(p8[7-0]);
-        p8[7-1] = s<2>(p8[7-1]);
-        p8[7-2] = s<3>(p8[7-2]);
-        p8[7-3] = s<4>(p8[7-3]);
-        p8[7-4] = s<2>(p8[7-4]);
-        p8[7-5] = s<3>(p8[7-5]);
-        p8[7-6] = s<4>(p8[7-6]);
-        p8[7-7] = s<1>(p8[7-7]);
-        return x;
+        return
+            sp1(y) ^ sp2(y) ^ sp3(y) ^ sp4(y) ^
+            sp5(y) ^ sp6(y) ^ sp7(y) ^ sp8(y);
     }
-    inline static std::uint64_t p(std::uint64_t x) noexcept
+    inline static std::uint64_t sp1(std::uint64_t y) noexcept
     {
-        std::uint8_t* p8 = (std::uint8_t*)&x;
-        union { std::uint64_t q; std::uint8_t b[8]; } r;
-        r.b[7-0] = p8[7-0] ^ p8[7-2] ^ p8[7-3] ^ p8[7-5] ^ p8[7-6] ^ p8[7-7];
-        r.b[7-1] = p8[7-0] ^ p8[7-1] ^ p8[7-3] ^ p8[7-4] ^ p8[7-6] ^ p8[7-7];
-        r.b[7-2] = p8[7-0] ^ p8[7-1] ^ p8[7-2] ^ p8[7-4] ^ p8[7-5] ^ p8[7-7];
-        r.b[7-3] = p8[7-1] ^ p8[7-2] ^ p8[7-3] ^ p8[7-4] ^ p8[7-5] ^ p8[7-6];
-        r.b[7-4] = p8[7-0] ^ p8[7-1] ^ p8[7-5] ^ p8[7-6] ^ p8[7-7];
-        r.b[7-5] = p8[7-1] ^ p8[7-2] ^ p8[7-4] ^ p8[7-6] ^ p8[7-7];
-        r.b[7-6] = p8[7-2] ^ p8[7-3] ^ p8[7-4] ^ p8[7-5] ^ p8[7-7];
-        r.b[7-7] = p8[7-0] ^ p8[7-3] ^ p8[7-4] ^ p8[7-5] ^ p8[7-6];
-        return r.q;
+        std::uint64_t q = s<1>((std::uint8_t)(y >> 56));
+        q |=(q << 56)|
+            (q << 48)|
+            (q << 40)|
+            (q << 24);
+        return q;
+    }
+    inline static std::uint64_t sp2(std::uint64_t y) noexcept
+    {
+        std::uint64_t q = s<2>((std::uint8_t)(y >> 48));
+        q = (q << 48)|
+            (q << 40)|
+            (q << 32)|
+            (q << 24)|
+            (q << 16);
+        return q;
+    }
+    inline static std::uint64_t sp3(std::uint64_t y) noexcept
+    {
+        std::uint64_t q = s<3>((std::uint8_t)(y >> 40));
+        q = (q << 56)|
+            (q << 40)|
+            (q << 32)|
+            (q << 16)|
+            (q << 8);
+        return q;
+    }
+    inline static std::uint64_t sp4(std::uint64_t y) noexcept
+    {
+        std::uint64_t q = s<4>((std::uint8_t)(y >> 32));
+        q |=(q << 56)|
+            (q << 48)|
+            (q << 32)|
+            (q << 8);
+        return q;
+    }
+    inline static std::uint64_t sp5(std::uint64_t y) noexcept
+    {
+        std::uint64_t q = s<2>((std::uint8_t)(y >> 24));
+        q |= (q << 48)|
+            (q << 40)|
+            (q << 32)|
+            (q << 16)|
+            (q << 8);
+        return q;
+    }
+    inline static std::uint64_t sp6(std::uint64_t y) noexcept
+    {
+        std::uint64_t q = s<3>((std::uint8_t)(y >> 16));
+        q |= (q << 56)|
+            (q << 40)|
+            (q << 32)|
+            (q << 24)|
+            (q << 8);
+        return q;
+    }
+    inline static std::uint64_t sp7(std::uint64_t y) noexcept
+    {
+        std::uint64_t q = s<4>((std::uint8_t)(y >> 8));
+        q |= (q << 56)|
+            (q << 48)|
+            (q << 32)|
+            (q << 24)|
+            (q << 16);
+        return q;
+    }
+    inline static std::uint64_t sp8(std::uint64_t y) noexcept
+    {
+        std::uint64_t q = s<1>((std::uint8_t)y);
+        q = (q << 56)|
+            (q << 48)|
+            (q << 40)|
+            (q << 24)|
+            (q << 16)|
+            (q << 8);
+        return q;
     }
     template<int I>
     inline static std::uint8_t s(std::uint8_t x) noexcept
@@ -388,8 +446,7 @@ public:
 
     void normal_round(std::uint64_t* dp, unsigned i) const noexcept
     {
-        std::uint64_t l;
-        l = dp[0];
+        std::uint64_t l = dp[0];
         dp[0] = dp[1] ^ f(l, k_[i]);
         dp[1] = l;
     }
@@ -434,6 +491,7 @@ public:
         normal_round(dp, nr-2);
         normal_round(dp, nr-1);
         std::swap(dp[0], dp[1]);
+
         dp[1] ^= kw_[3];
         dp[0] ^= kw_[2];
 
