@@ -11,7 +11,7 @@
 ```
 git clone https://github.com/ouchiminh/CiaoCrypto.git
 ```
-`ouchilib/include`と`multiprecision/include`をインクルードパスに追加します。
+`ouchilib/include`とBoostをインクルードパスに追加します。
 
 # サードパーティ製のライブラリ
 
