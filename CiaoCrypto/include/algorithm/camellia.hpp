@@ -340,16 +340,16 @@ public:
     }
     inline static std::uint64_t fl(std::uint64_t x, std::uint64_t k) noexcept
     {
-        std::uint64_t y = 0;
-        y |= lower_half_bits(rotl((std::uint32_t)((x & k) >> 32), 1) ^ x);
+        std::uint64_t y;
+        y = lower_half_bits(rotl((std::uint32_t)((x & k) >> 32), 1) ^ x);
         y |= higher_half_bits(((y | k) << 32) ^ x);
         return y;
 
     }
     inline static std::uint64_t inv_fl(std::uint64_t y, std::uint64_t k) noexcept
     {
-        std::uint64_t x = 0;
-        x |= ((y | k) ^ (y >> 32)) << 32;
+        std::uint64_t x;
+        x = ((y | k) ^ (y >> 32)) << 32;
         x |= lower_half_bits(rotl((std::uint32_t)((x & k) >> 32), 1) ^ y);
         return x;
     }
@@ -361,35 +361,35 @@ public:
     }
     inline static std::uint64_t sp1(std::uint64_t y) noexcept
     {
-        return s<1>((std::uint8_t)(y >> 56)) & 0xFFFFFF00FF0000FFU;
+        return s<1>(0xFF &(y >> 56)) & 0xFFFFFF00FF0000FF;
     }
     inline static std::uint64_t sp2(std::uint64_t y) noexcept
     {
-        return s<2>((std::uint8_t)(y >> 48)) & 0x00FFFFFFFFFF0000;
+        return s<2>(0xFF &(y >> 48)) & 0x00FFFFFFFFFF0000;
     }
     inline static std::uint64_t sp3(std::uint64_t y) noexcept
     {
-        return s<3>((std::uint8_t)(y >> 40)) & 0xFF00FFFF00FFFF00;
+        return s<3>(0xFF &(y >> 40)) & 0xFF00FFFF00FFFF00;
     }
     inline static std::uint64_t sp4(std::uint64_t y) noexcept
     {
-        return s<4>((std::uint8_t)(y >> 32)) & 0xFFFF00FF0000FFFF;
+        return s<4>(0xFF &(y >> 32)) & 0xFFFF00FF0000FFFF;
     }
     inline static std::uint64_t sp5(std::uint64_t y) noexcept
     {
-        return s<2>((std::uint8_t)(y >> 24)) & 0x00FFFFFF00FFFFFF;
+        return s<2>(0xFF &(y >> 24)) & 0x00FFFFFF00FFFFFF;
     }
     inline static std::uint64_t sp6(std::uint64_t y) noexcept
     {
-        return s<3>((std::uint8_t)(y >> 16)) & 0xFF00FFFFFF00FFFF;
+        return s<3>(0xFF &(y >> 16)) & 0xFF00FFFFFF00FFFF;
     }
     inline static std::uint64_t sp7(std::uint64_t y) noexcept
     {
-        return s<4>((std::uint8_t)(y >> 8)) & 0xFFFF00FFFFFF00FF;
+        return s<4>(0xFF &(y >> 8)) & 0xFFFF00FFFFFF00FF;
     }
     inline static std::uint64_t sp8(std::uint64_t y) noexcept
     {
-        return s<1>((std::uint8_t)y) & 0xFFFFFF00FFFFFF00;
+        return s<1>(0xFF &y) & 0xFFFFFF00FFFFFF00;
     }
     template<int I>
     inline static std::uint64_t s(std::uint64_t x) noexcept
