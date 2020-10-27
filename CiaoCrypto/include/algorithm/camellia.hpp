@@ -728,8 +728,7 @@ public:
 
     void cipher(std::uint8_t* data) const noexcept
     {
-        std::uint64_t dp[2];
-        std::memcpy(dp, kw_, 16);
+        std::uint64_t dp[2] = { kw_[0], kw_[1] };
         dp[0] ^= pack<std::uint64_t>(data);
         dp[1] ^= pack<std::uint64_t>(data+8);
 
@@ -758,12 +757,9 @@ public:
     }
     void inv_cipher(std::uint8_t* data) const noexcept
     {
-        std::uint64_t dp[2];
-        dp[0] = pack<std::uint64_t>(data);
-        dp[1] = pack<std::uint64_t>(data+8);
-
-        dp[0] ^= kw_[2];
-        dp[1] ^= kw_[3];
+        std::uint64_t dp[2] = { kw_[2], kw_[3] };
+        dp[0] ^= pack<std::uint64_t>(data);
+        dp[1] ^= pack<std::uint64_t>(data+8);
 
         for (int i = nr; i > 6;) {
             dp[1] ^= f(dp[0], k_[--i]);
