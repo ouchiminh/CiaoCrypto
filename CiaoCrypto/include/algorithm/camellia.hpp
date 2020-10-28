@@ -598,7 +598,7 @@ public:
         std::uint64_t kbuf[2];
         std::uint64_t kl[2];
         std::uint64_t kr[2];
-        for (int i = 0; i < S/8; ++i) {
+        for (unsigned i = 0; i < S/8; ++i) {
             klr[i] = pack<std::uint64_t>(key + i * 8);
         }
         if constexpr (S == 16)
@@ -769,7 +769,7 @@ public:
             kw_[3] ^ pack<std::uint64_t>(data+8)
         };
 
-        for (int i = nr; i > 6;) {
+        for (int i = nr; i != 6;) {
             dp[1] ^= f(dp[0], k_[--i]);
             dp[0] ^= f(dp[1], k_[--i]);
             dp[1] ^= f(dp[0], k_[--i]);
