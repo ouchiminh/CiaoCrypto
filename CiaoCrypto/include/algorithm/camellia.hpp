@@ -4,6 +4,10 @@
 #include <cstring>
 #include <utility>
 #include "../common.hpp"
+#ifdef _MSC_VER
+#include <stdlib.h>
+#endif
+
 
 namespace ciao {
 
@@ -701,13 +705,21 @@ public:
     }
     inline static std::uint64_t fl(std::uint64_t x, std::uint64_t k) noexcept
     {
+#ifdef _MSC_VER
+        x ^= _rotl((std::uint32_t)((x & k) >> 32), 1);
+#else
         x ^= rotl((std::uint32_t)((x & k) >> 32), 1);
+#endif
         return x ^ (x | k) << 32;
     }
     inline static std::uint64_t inv_fl(std::uint64_t y, std::uint64_t k) noexcept
     {
         y ^= ((y | k) << 32);
+#ifdef _MSC_VER
+        return y ^ _rotl((std::uint32_t)((y & k) >> 32), 1);
+#else
         return y ^ rotl((std::uint32_t)((y & k) >> 32), 1);
+#endif
     }
     inline static std::uint64_t sp(std::uint64_t y) noexcept
     {
