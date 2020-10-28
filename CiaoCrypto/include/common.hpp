@@ -236,7 +236,7 @@ inline auto shiftl_array(Int(&bits)[S], unsigned bit_shift_width) noexcept
             buf[i - elm_shift_width] |= (bits[i] & f) << bit_shift_mod_width;
         }
     } else {
-        for (int i = 0; i < S - elm_shift_width; ++i) {
+        for (int i = 0; i < (int)(S - elm_shift_width); ++i) {
             if (i + elm_shift_width + 1 < S)
                 buf[i + elm_shift_width + 1] |= (bits[i] & s) >> (wbit - bit_shift_mod_width);
             buf[i + elm_shift_width] |= (bits[i] & f) << bit_shift_mod_width;
