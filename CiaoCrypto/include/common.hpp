@@ -25,7 +25,7 @@ namespace detail {
 
 template<class T, size_t S>
 auto prefetch(const T(&table)[S]) noexcept
--> std::enable_if_t<(sizeof(T)*S) % sizeof(std::uint64_t) == 0, void>
+-> std::enable_if_t<(sizeof(T)*S) % sizeof(std::uint64_t) == 0 && std::is_trivial_v<T>, void>
 {
     const volatile std::uint64_t* t = reinterpret_cast<const volatile std::uint64_t*>(&*table);
     volatile std::uint64_t ret;

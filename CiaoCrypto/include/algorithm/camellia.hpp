@@ -4,10 +4,6 @@
 #include <cstring>
 #include <utility>
 #include "../common.hpp"
-#ifdef _MSC_VER
-#include <stdlib.h>
-#endif
-
 
 namespace ciao {
 
@@ -567,6 +563,7 @@ struct camellia_sigma_t {
     constexpr std::uint64_t operator[](unsigned int i) const noexcept { return sigma[i]; }
 };
 inline constexpr camellia_sigma_t camellia_sigma;
+
 }
 
 template<size_t S, class = void>
@@ -705,6 +702,7 @@ public:
         detail::prefetch(detail::camellia_spbox[5]);
         detail::prefetch(detail::camellia_spbox[6]);
         detail::prefetch(detail::camellia_spbox[7]);
+        detail::prefetch(k_);
     }
 
     inline static std::uint64_t f(std::uint64_t x, std::uint64_t k) noexcept
@@ -713,21 +711,13 @@ public:
     }
     inline static std::uint64_t fl(std::uint64_t x, std::uint64_t k) noexcept
     {
-#ifdef _MSC_VER
-        x ^= _rotl((std::uint32_t)((x & k) >> 32), 1);
-#else
         x ^= rotl((std::uint32_t)((x & k) >> 32), 1);
-#endif
         return x ^ (x | k) << 32;
     }
     inline static std::uint64_t inv_fl(std::uint64_t y, std::uint64_t k) noexcept
     {
         y ^= ((y | k) << 32);
-#ifdef _MSC_VER
-        return y ^ _rotl((std::uint32_t)((y & k) >> 32), 1);
-#else
         return y ^ rotl((std::uint32_t)((y & k) >> 32), 1);
-#endif
     }
     inline static std::uint64_t sp(std::uint64_t y) noexcept
     {
@@ -735,11 +725,11 @@ public:
             sp<1>(y) ^ sp<2>(y) ^ sp<3>(y) ^ sp<4>(y) ^
             sp<5>(y) ^ sp<6>(y) ^ sp<7>(y) ^ sp<8>(y);
     }
-    template<int I>
+    template<unsigned I>
     inline static std::uint64_t sp(std::uint64_t x) noexcept
     {
         constexpr int width = 8*(8-I);
-        return detail::camellia_spbox[I-1][0xFF & (x >> width)];
+        return detail::camellia_spbox[I-1][(std::uint8_t)(x >> width)];
     }
 
     inline void cipher(std::uint8_t* data) const noexcept
@@ -750,12 +740,12 @@ public:
         };
 
         for (unsigned int i = 0u; i < nr - 6;) {
-            dp[1] ^= f(dp[0], k_[i++]);
-            dp[0] ^= f(dp[1], k_[i++]);
-            dp[1] ^= f(dp[0], k_[i++]);
-            dp[0] ^= f(dp[1], k_[i++]);
-            dp[1] ^= f(dp[0], k_[i++]);
-            dp[0] ^= f(dp[1], k_[i++]);
+            dp[1] ^= sp(dp[0] ^ k_[i++]);
+            dp[0] ^= sp(dp[1] ^ k_[i++]);
+            dp[1] ^= sp(dp[0] ^ k_[i++]);
+            dp[0] ^= sp(dp[1] ^ k_[i++]);
+            dp[1] ^= sp(dp[0] ^ k_[i++]);
+            dp[0] ^= sp(dp[1] ^ k_[i++]);
             dp[0] = fl(dp[0], kl_[i/3-2]);
             dp[1] = inv_fl(dp[1], kl_[i/3-1]);
         }
