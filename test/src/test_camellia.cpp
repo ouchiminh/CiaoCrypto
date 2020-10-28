@@ -131,6 +131,25 @@ OUCHI_TEST_CASE(benchmark_camellia128_ctr)
     }
 
 }
+OUCHI_TEST_CASE(benchmark_camellia128_ctr_stream)
+{
+    using namespace std::chrono;
+    const unsigned char key[] = "\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f";
+    constexpr int r = 1024 * 8;
+    constexpr int c = 4 * 1024;
+    ciao::stream_like_ctr<ciao::camellia<16>, __m128i> encoder{ key, 0ull, key };
+    {
+        auto beg = std::chrono::steady_clock::now();
+        for (auto k = 0ull; k < r; ++k) {
+            for (int i = 0; i < c; ++i)
+                _mm_xor_si128(encoder.next(), _mm_setzero_si128());
+        }
+
+        duration<double, std::ratio<1, 1>> dur = std::chrono::steady_clock::now() - beg;
+        std::cout << "camellia-128 ctr stream enc " <<  c / dur.count() *r/ 1000 << " k\n";
+    }
+
+}
 OUCHI_TEST_CASE(benchmark_camellia256_ctr)
 {
     using namespace std::chrono;
@@ -151,5 +170,24 @@ OUCHI_TEST_CASE(benchmark_camellia256_ctr)
 
 }
 
+OUCHI_TEST_CASE(benchmark_camellia256_ctr_stream)
+{
+    using namespace std::chrono;
+    const unsigned char key[] = "\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f";
+    constexpr int r = 1024 * 8;
+    constexpr int c = 4 * 1024;
+    ciao::stream_like_ctr<ciao::camellia<32>, __m128i> encoder{ key, 0ull, key };
+    {
+        auto beg = std::chrono::steady_clock::now();
+        for (auto k = 0ull; k < r; ++k) {
+            for (int i = 0; i < c; ++i)
+                _mm_xor_si128(encoder.next(), _mm_setzero_si128());
+        }
+
+        duration<double, std::ratio<1, 1>> dur = std::chrono::steady_clock::now() - beg;
+        std::cout << "camellia-256 ctr stream enc " <<  c / dur.count() *r/ 1000 << " k\n";
+    }
+
+}
 #endif
 
