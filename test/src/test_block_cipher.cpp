@@ -95,7 +95,7 @@ OUCHI_TEST_CASE(test_ctr_encode_decode)
     ctr<aes<16>> encoder((const std::uint8_t*)block, 0ull, (const std::uint8_t*)key);
     ctr<aes<16>> decoder((const std::uint8_t*)block, 0ull, (const std::uint8_t*)key);
     OUCHI_REQUIRE_TRUE(encoder.cipher(src, 16, dest, 32));
-    OUCHI_REQUIRE_EQUAL(decoder.inv_cipher(dest, 32, dest, 32).unwrap(), 16);
+    OUCHI_REQUIRE_EQUAL(decoder.inv_cipher(dest, 16, dest, 32).unwrap(), 16);
     OUCHI_CHECK_EQUAL(dest[0], 0x00);
     OUCHI_CHECK_EQUAL(dest[1], 0x11);
     OUCHI_CHECK_EQUAL(dest[15], 0xff);

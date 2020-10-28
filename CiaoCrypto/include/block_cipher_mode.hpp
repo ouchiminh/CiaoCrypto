@@ -180,41 +180,33 @@ public:
     }
     virtual ouchi::result::result<rsize_t, error_code> cipher(const void* src, rsize_t srcsize, void* dest, rsize_t destsize) override
     {
-        auto actual_size = block_cipher<A>::pad(src, srcsize, dest, destsize, A::block_size);
-        if (srcsize > RSIZE_MAX) return ouchi::result::err(error_code(error_value::invalid_arguments));
-        if (actual_size == SIZE_MAX) return ouchi::result::err(error_code(error_value::too_short_buffer));
-
-        cipher((__m128i*)dest, actual_size / sizeof(__m128i));
-
-        return ouchi::result::ok(actual_size);
+        if (destsize < srcsize) return ouchi::result::err(error_code(error_value::too_short_buffer));
+        cipher((const std::uint8_t*)src, srcsize, (std::uint8_t*)dest);
+        return ouchi::result::ok(srcsize);
     }
     virtual ouchi::result::result<rsize_t, error_code> inv_cipher(const void* src, rsize_t srcsize, void* dest, rsize_t destsize)
     {
-        if (srcsize > RSIZE_MAX && srcsize % A::block_size != 0) return ouchi::result::err(error_code(error_value::invalid_arguments));
-        if (srcsize > destsize) return ouchi::result::err(error_code(error_value::too_short_buffer));
-        std::memmove(dest, src, srcsize);
-
-        cipher((__m128i*)dest, destsize / sizeof(__m128i));
-
-        auto pad_size = ((std::uint8_t*)dest)[srcsize - 1];
-        for (size_t i = 0; i < pad_size; ++i) {
-            if (((std::uint8_t*)dest)[srcsize - i - 1] != pad_size) return ouchi::result::err(error_code(error_value::corrupted_data));
-        }
-        return ouchi::result::ok(srcsize - pad_size);
+        return cipher(src, srcsize, dest, destsize);
     }
 private:
-    void cipher(__m128i* data, rsize_t count)
+    inline void cipher(const std::uint8_t* data, rsize_t count, std::uint8_t* dest) noexcept
     {
         __m128i cur;
-        __m128i simd_state;
-        for (rsize_t i = 0; i < count; ++i) {
+        __m128i enc_state;
+        for (rsize_t i = 0; i < count - A::block_size; i += A::block_size) {
             state_ = counter_;
             block_cipher<A>::algorithm_.cipher(state_.bctr);
-            simd_state = _mm_load_si128((__m128i*)&state_);
-            cur = _mm_loadu_si128(data + i);
-            _mm_storeu_si128(data + i, _mm_xor_si128(simd_state, cur));
+            enc_state = _mm_load_si128((__m128i*)&state_);
+            cur = _mm_loadu_si128((__m128i*)(data + i));
+            _mm_storeu_si128((__m128i*)(dest + i), _mm_xor_si128(enc_state, cur));
             counter_.qwctr[A::block_size / 8 - 1] += 1;
         }
+        state_ = counter_;
+        block_cipher<A>::algorithm_.cipher(state_.bctr);
+        enc_state = _mm_load_si128((__m128i*)&state_);
+        std::memcpy(&cur, data + count - A::block_size, count - (count / A::block_size - 1) * A::block_size);
+        cur = _mm_xor_si128(enc_state, cur);
+        std::memcpy(dest + count - A::block_size, &cur, count - (count / A::block_size - 1) * A::block_size);
     }
     alignas(__m128i) union {
         std::uint8_t bctr[A::block_size];
@@ -275,10 +267,8 @@ public:
     }
 private:
     static constexpr unsigned max_in_block = A::block_size / sizeof(To);
-    union {
+    alignas(16) union {
         std::uint8_t bctr[A::block_size];
-        std::uint16_t wctr[A::block_size / 2];
-        std::uint32_t dwctr[A::block_size / 4];
         std::uint64_t qwctr[A::block_size / 8];
     } counter_, state_;
     unsigned count_in_block_;
