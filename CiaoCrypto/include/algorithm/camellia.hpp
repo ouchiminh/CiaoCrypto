@@ -701,17 +701,13 @@ public:
     }
     inline static std::uint64_t fl(std::uint64_t x, std::uint64_t k) noexcept
     {
-        std::uint64_t y;
-        y = (rotl((std::uint32_t)((x & k) >> 32), 1) ^ lower_half_bits(x));
-        y |= (((y | k) << 32) ^ higher_half_bits(x));
-        return y;
+        x ^= rotl((std::uint32_t)((x & k) >> 32), 1);
+        return x ^ (x | k) << 32;
     }
     inline static std::uint64_t inv_fl(std::uint64_t y, std::uint64_t k) noexcept
     {
-        std::uint64_t x;
-        x = (((y | k) << 32) ^ higher_half_bits(y));
-        x |= (rotl((std::uint32_t)((x & k) >> 32), 1) ^ lower_half_bits(y));
-        return x;
+        y ^= ((y | k) << 32);
+        return y ^ rotl((std::uint32_t)((y & k) >> 32), 1);
     }
     inline static std::uint64_t sp(std::uint64_t y) noexcept
     {
@@ -727,9 +723,10 @@ public:
 
     void cipher(std::uint8_t* data) const noexcept
     {
-        std::uint64_t dp[2] = { kw_[0], kw_[1] };
-        dp[0] ^= pack<std::uint64_t>(data);
-        dp[1] ^= pack<std::uint64_t>(data+8);
+        std::uint64_t dp[2] = {
+            kw_[0] ^ pack<std::uint64_t>(data),
+            kw_[1] ^ pack<std::uint64_t>(data+8)
+        };
 
         for (unsigned int i = 0u; i < nr - 6;) {
             dp[1] ^= f(dp[0], k_[i++]);
@@ -756,9 +753,10 @@ public:
     }
     void inv_cipher(std::uint8_t* data) const noexcept
     {
-        std::uint64_t dp[2] = { kw_[2], kw_[3] };
-        dp[0] ^= pack<std::uint64_t>(data);
-        dp[1] ^= pack<std::uint64_t>(data+8);
+        std::uint64_t dp[2] = {
+            kw_[2] ^ pack<std::uint64_t>(data),
+            kw_[3] ^ pack<std::uint64_t>(data+8)
+        };
 
         for (int i = nr; i > 6;) {
             dp[1] ^= f(dp[0], k_[--i]);
