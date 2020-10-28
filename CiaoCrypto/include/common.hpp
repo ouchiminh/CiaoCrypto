@@ -22,6 +22,19 @@ inline constexpr auto rotl(Int x, unsigned nbit) noexcept
 }
 
 namespace detail {
+
+template<class T, size_t S>
+auto prefetch(const T(&table)[S]) noexcept
+-> std::enable_if_t<(sizeof(T)*S) % sizeof(std::uint64_t) == 0, void>
+{
+    const volatile std::uint64_t* t = reinterpret_cast<const volatile std::uint64_t*>(&*table);
+    volatile std::uint64_t ret;
+    std::uint64_t sum;
+    for (size_t i = 0; i < S * sizeof(T) / sizeof(std::uint64_t); ++i)
+        sum ^= t[i];
+    ret = sum;
+}
+
 template<class Int, size_t DestSize, size_t ...S>
 inline constexpr void unpack_impl(Int src, std::uint8_t* dest, std::index_sequence<S...>)
 {

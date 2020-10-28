@@ -89,18 +89,6 @@ struct gf_mul {
 };
 inline gf_mul gf;
 
-template<class T, size_t S>
-auto prefetch(const T(&table)[S]) noexcept
--> std::enable_if_t<S % sizeof(std::uint64_t) == 0, void>
-{
-    const volatile std::uint64_t* t = reinterpret_cast<const volatile std::uint64_t*>(&*table);
-    volatile std::uint64_t ret;
-    std::uint64_t sum;
-    for (size_t i = 0; i < S * sizeof(T) / sizeof(std::uint64_t); ++i)
-        sum ^= t[i];
-    ret = sum;
-}
-
 } // namespace detail;
 
 template<size_t K, class = void>
@@ -161,6 +149,14 @@ struct aes<K, std::enable_if_t<K == 16 || K ==24 || K ==32>> {
         for (i = 0; i < sizeof(w_)/sizeof(*w_); ++i) {
             unpack(w_[i], w8_+i*nb);
         }
+        detail::prefetch(detail::gf.data2113);
+        detail::prefetch(detail::gf.data3211);
+        detail::prefetch(detail::gf.data1321);
+        detail::prefetch(detail::gf.data1132);
+        detail::prefetch(detail::gf.datae9db);
+        detail::prefetch(detail::gf.databe9d);
+        detail::prefetch(detail::gf.datadbe9);
+        detail::prefetch(detail::gf.data9dbe);
     }
     void cipher(std::uint8_t* data) const noexcept
     {

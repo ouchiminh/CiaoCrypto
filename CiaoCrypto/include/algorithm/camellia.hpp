@@ -697,6 +697,14 @@ public:
             rotl_array(kl, kbuf, 111); // 17,18
             std::memcpy(k_ + 16, kbuf, 16);
         }
+        detail::prefetch(detail::camellia_spbox[0]);
+        detail::prefetch(detail::camellia_spbox[1]);
+        detail::prefetch(detail::camellia_spbox[2]);
+        detail::prefetch(detail::camellia_spbox[3]);
+        detail::prefetch(detail::camellia_spbox[4]);
+        detail::prefetch(detail::camellia_spbox[5]);
+        detail::prefetch(detail::camellia_spbox[6]);
+        detail::prefetch(detail::camellia_spbox[7]);
     }
 
     inline static std::uint64_t f(std::uint64_t x, std::uint64_t k) noexcept
@@ -730,10 +738,11 @@ public:
     template<int I>
     inline static std::uint64_t sp(std::uint64_t x) noexcept
     {
-        return detail::camellia_spbox[I-1][0xFF & (x >> (8 * (8 - I)))];
+        constexpr int width = 8*(8-I);
+        return detail::camellia_spbox[I-1][0xFF & (x >> width)];
     }
 
-    void cipher(std::uint8_t* data) const noexcept
+    inline void cipher(std::uint8_t* data) const noexcept
     {
         std::uint64_t dp[2] = {
             kw_[0] ^ pack<std::uint64_t>(data),
@@ -763,7 +772,7 @@ public:
         unpack(dp[1], data);
         unpack(dp[0], data+8);
     }
-    void inv_cipher(std::uint8_t* data) const noexcept
+    inline void inv_cipher(std::uint8_t* data) const noexcept
     {
         std::uint64_t dp[2] = {
             kw_[2] ^ pack<std::uint64_t>(data),
