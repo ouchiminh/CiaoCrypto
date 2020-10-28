@@ -29,7 +29,7 @@ auto prefetch(const T(&table)[S]) noexcept
 {
     const volatile std::uint64_t* t = reinterpret_cast<const volatile std::uint64_t*>(&*table);
     volatile std::uint64_t ret;
-    std::uint64_t sum;
+    std::uint64_t sum = 0;
     for (size_t i = 0; i < S * sizeof(T) / sizeof(std::uint64_t); ++i)
         sum ^= t[i];
     ret = sum;
@@ -186,7 +186,6 @@ inline auto rotr_array(const Int(&bits)[S], Int(&dest)[S], unsigned bit_width) n
     constexpr auto w = CHAR_BIT * S;
     Int buf[S];
     std::memcpy(buf, bits, S);
-    Int buf[S];
     std::memcpy(dest, bits, S);
     shiftr_array(buf, bit_width);
     shiftl_array(dest, w - bit_width);
