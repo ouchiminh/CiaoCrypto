@@ -712,7 +712,7 @@ public:
     inline static std::uint64_t fl(std::uint64_t x, std::uint64_t k) noexcept
     {
         x ^= rotl((std::uint32_t)((x & k) >> 32), 1);
-        return x ^ (x | k) << 32;
+        return x ^ ((x | k) << 32);
     }
     inline static std::uint64_t inv_fl(std::uint64_t y, std::uint64_t k) noexcept
     {
@@ -740,12 +740,12 @@ public:
         };
 
         for (unsigned int i = 0u; i < nr - 6;) {
-            dp[1] ^= sp(dp[0] ^ k_[i++]);
-            dp[0] ^= sp(dp[1] ^ k_[i++]);
-            dp[1] ^= sp(dp[0] ^ k_[i++]);
-            dp[0] ^= sp(dp[1] ^ k_[i++]);
-            dp[1] ^= sp(dp[0] ^ k_[i++]);
-            dp[0] ^= sp(dp[1] ^ k_[i++]);
+            dp[1] ^= f(dp[0], k_[i++]);
+            dp[0] ^= f(dp[1], k_[i++]);
+            dp[1] ^= f(dp[0], k_[i++]);
+            dp[0] ^= f(dp[1], k_[i++]);
+            dp[1] ^= f(dp[0], k_[i++]);
+            dp[0] ^= f(dp[1], k_[i++]);
             dp[0] = fl(dp[0], kl_[i/3-2]);
             dp[1] = inv_fl(dp[1], kl_[i/3-1]);
         }
