@@ -23,16 +23,23 @@ inline constexpr auto rotl(Int x, unsigned nbit) noexcept
 
 namespace detail {
 
+template<class T>
+void prefetch(const T *table, size_t count) noexcept
+{
+    assert(sizeof(T) * count % 8  == 0);
+    const volatile std::uint64_t* t = reinterpret_cast<const volatile std::uint64_t*>(table);
+    volatile std::uint64_t ret;
+    std::uint64_t sum = 0;
+    for (size_t i = 0; i < count * sizeof(T) / sizeof(std::uint64_t); ++i)
+        sum ^= t[i];
+    ret = sum;
+}
+
 template<class T, size_t S>
 auto prefetch(const T(&table)[S]) noexcept
 -> std::enable_if_t<(sizeof(T)*S) % sizeof(std::uint64_t) == 0 && std::is_trivial_v<T>, void>
 {
-    const volatile std::uint64_t* t = reinterpret_cast<const volatile std::uint64_t*>(&*table);
-    volatile std::uint64_t ret;
-    std::uint64_t sum = 0;
-    for (size_t i = 0; i < S * sizeof(T) / sizeof(std::uint64_t); ++i)
-        sum ^= t[i];
-    ret = sum;
+    prefetch(table, S);
 }
 
 template<class Int, size_t DestSize, size_t ...S>
