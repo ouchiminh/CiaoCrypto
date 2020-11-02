@@ -121,6 +121,7 @@ OUCHI_TEST_CASE(benchmark_camellia128_ctr)
     std::vector<std::uint8_t> data(16 * 1024, 0xc5);
     std::vector<std::uint8_t> dest(16 * 1025);
     ciao::ctr<ciao::camellia<16>> encoder(key, 0ull, key);
+    data[0] = (unsigned char)steady_clock::now().time_since_epoch().count();
     {
         auto beg = std::chrono::steady_clock::now();
         for (auto k = 0ull; k < r; ++k) {
@@ -128,7 +129,7 @@ OUCHI_TEST_CASE(benchmark_camellia128_ctr)
         }
 
         duration<double, std::ratio<1, 1>> dur = std::chrono::steady_clock::now() - beg;
-        std::cout << "camellia-128 ctr enc " <<  data.size() / dur.count() *r/ 1024 / 1024 << " MiB\n";
+        std::cout << "camellia-128 ctr enc " <<  data.size() / dur.count() *r/ 1000 / 1000 << " M\n";
     }
 
 }
@@ -140,6 +141,7 @@ OUCHI_TEST_CASE(benchmark_camellia256_ctr)
     std::vector<std::uint8_t> data(16 * 1024, 0xc5);
     std::vector<std::uint8_t> dest(16 * 1025);
     ciao::ctr<ciao::camellia<32>> encoder(key, 0ull, key);
+    data[0] = (unsigned char)steady_clock::now().time_since_epoch().count();
     {
         auto beg = std::chrono::steady_clock::now();
         for (auto k = 0ull; k < r; ++k) {
@@ -147,7 +149,7 @@ OUCHI_TEST_CASE(benchmark_camellia256_ctr)
         }
 
         duration<double, std::ratio<1, 1>> dur = std::chrono::steady_clock::now() - beg;
-        std::cout << "camellia-256 ctr enc " <<  data.size() / dur.count() *r/ 1024 / 1024 << " MiB\n";
+        std::cout << "camellia-256 ctr enc " <<  data.size() / dur.count() *r/ 1000 / 1000 << " M\n";
     }
 
 }
