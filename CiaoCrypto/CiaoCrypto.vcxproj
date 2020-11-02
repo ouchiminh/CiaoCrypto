@@ -29,7 +29,6 @@
     <ClInclude Include="include\bytes.hpp" />
     <ClInclude Include="include\common.hpp" />
     <ClInclude Include="include\error_code.hpp" />
-    <ClInclude Include="include\gf.hpp" />
     <ClInclude Include="include\matrix.hpp" />
     <ClInclude Include="include\primality.hpp" />
   </ItemGroup>
