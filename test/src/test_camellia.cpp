@@ -19,7 +19,7 @@ namespace {
         0xcc,0xdd,0xee,0xff
     };
 }
-
+#if 1
 OUCHI_TEST_CASE(test_camellia128)
 {
     ciao::camellia<16> encoder;
@@ -64,7 +64,7 @@ OUCHI_TEST_CASE(test_camellia256)
     OUCHI_CHECK_EQUAL((unsigned)block[0], 0x01);
     OUCHI_CHECK_EQUAL((unsigned)block[15], 0x10);
 }
-
+#endif
 #if 0
 
 #include <iostream>
@@ -98,6 +98,7 @@ OUCHI_TEST_CASE(benchmark_camellia128)
     constexpr int r = 1024 * 16;
     constexpr int c = 16 * 1024;
     alignas(16) static std::uint8_t data[c] = {};
+    data[0] = (unsigned char)steady_clock::now().time_since_epoch().count();
     ciao::camellia<16> encoder{ key };
     {
         auto beg = std::chrono::steady_clock::now();
@@ -111,12 +112,12 @@ OUCHI_TEST_CASE(benchmark_camellia128)
         std::cout << "camellia-128 enc " <<  c / dur.count() / 1000*r << " k\n";
     }
 }
-
+#if 1
 OUCHI_TEST_CASE(benchmark_camellia128_ctr)
 {
     using namespace std::chrono;
     const unsigned char key[] = "\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f";
-    constexpr int r = 1024 * 8;
+    constexpr int r = 1024 * 16;
     std::vector<std::uint8_t> data(16 * 1024, 0xc5);
     std::vector<std::uint8_t> dest(16 * 1025);
     ciao::ctr<ciao::camellia<16>> encoder(key, 0ull, key);
@@ -127,7 +128,7 @@ OUCHI_TEST_CASE(benchmark_camellia128_ctr)
         }
 
         duration<double, std::ratio<1, 1>> dur = std::chrono::steady_clock::now() - beg;
-        std::cout << "camellia-128 ctr enc " <<  data.size() / dur.count() *r/ 1000 << " k\n";
+        std::cout << "camellia-128 ctr enc " <<  data.size() / dur.count() *r/ 1024 / 1024 << " MiB\n";
     }
 
 }
@@ -135,7 +136,7 @@ OUCHI_TEST_CASE(benchmark_camellia256_ctr)
 {
     using namespace std::chrono;
     const unsigned char key[] = "\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f";
-    constexpr int r = 1024 * 8;
+    constexpr int r = 1024 * 16;
     std::vector<std::uint8_t> data(16 * 1024, 0xc5);
     std::vector<std::uint8_t> dest(16 * 1025);
     ciao::ctr<ciao::camellia<32>> encoder(key, 0ull, key);
@@ -146,7 +147,7 @@ OUCHI_TEST_CASE(benchmark_camellia256_ctr)
         }
 
         duration<double, std::ratio<1, 1>> dur = std::chrono::steady_clock::now() - beg;
-        std::cout << "camellia-256 ctr enc " <<  data.size() / dur.count() *r/ 1000 << " k\n";
+        std::cout << "camellia-256 ctr enc " <<  data.size() / dur.count() *r/ 1024 / 1024 << " MiB\n";
     }
 
 }
@@ -180,5 +181,6 @@ OUCHI_TEST_CASE(benchmark_camellia128_ctr_raw)
     }
 
 }
+#endif
 #endif
 
