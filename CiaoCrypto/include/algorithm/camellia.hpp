@@ -576,6 +576,7 @@ public:
     static constexpr unsigned int u = std::min((unsigned)S+2u, 24u);
     static constexpr unsigned int v = std::min((unsigned)S / 4u, 6u);
     static constexpr unsigned int nr = std::min((unsigned)S+2u, 24u);
+    static constexpr unsigned int kc = nr + 2 * ((nr) / 6 - 1);
     static constexpr size_t block_size = 16;
 
     camellia(const std::uint8_t* key)
@@ -586,8 +587,7 @@ public:
     ~camellia()
     {
         std::fill((volatile std::uint64_t*)kw_, (volatile std::uint64_t*)kw_ + t, 0ull);
-        std::fill((volatile std::uint64_t*)k_, (volatile std::uint64_t*)k_ + u, 0ull);
-        std::fill((volatile std::uint64_t*)kl_, (volatile std::uint64_t*)kl_ + v, 0ull);
+        std::fill((volatile std::uint64_t*)sk_, (volatile std::uint64_t*)sk_ + kc, 0ull);
     }
     void key_schedule(const std::uint8_t* key) noexcept
     {
@@ -598,6 +598,8 @@ public:
         std::uint64_t kbuf[2];
         std::uint64_t kl[2];
         std::uint64_t kr[2];
+        std::uint64_t k_[u];
+        std::uint64_t kl_[v];
         for (unsigned i = 0; i < S/8; ++i) {
             klr[i] = pack<std::uint64_t>(key + i * 8);
         }
@@ -694,15 +696,24 @@ public:
             rotl_array(kl, kbuf, 111); // 17,18
             std::memcpy(k_ + 16, kbuf, 16);
         }
-        detail::prefetch(detail::camellia_spbox[0]);
-        detail::prefetch(detail::camellia_spbox[1]);
-        detail::prefetch(detail::camellia_spbox[2]);
-        detail::prefetch(detail::camellia_spbox[3]);
-        detail::prefetch(detail::camellia_spbox[4]);
-        detail::prefetch(detail::camellia_spbox[5]);
-        detail::prefetch(detail::camellia_spbox[6]);
-        detail::prefetch(detail::camellia_spbox[7]);
-        detail::prefetch(k_);
+        for (unsigned int i = 0u, j = 0u; i < nr - 6;) {
+            sk_[j++] =  k_[i++];
+            sk_[j++] =  k_[i++];
+            sk_[j++] =  k_[i++];
+            sk_[j++] =  k_[i++];
+            sk_[j++] =  k_[i++];
+            sk_[j++] =  k_[i++];
+            sk_[j++] =  kl_[i/3-2];
+            sk_[j++] =  kl_[i/3-1];
+        }
+        sk_[kc - 6] =  k_[nr - 6];
+        sk_[kc - 5] =  k_[nr - 5];
+        sk_[kc - 4] =  k_[nr - 4];
+        sk_[kc - 3] =  k_[nr - 3];
+        sk_[kc - 2] =  k_[nr - 2];
+        sk_[kc - 1] =  k_[nr - 1];
+        detail::prefetch(sk_);
+        detail::prefetch(detail::camellia_spbox);
     }
 
     inline static std::uint64_t f(std::uint64_t x, std::uint64_t k) noexcept
@@ -738,24 +749,23 @@ public:
             kw_[0] ^ pack<std::uint64_t>(data),
             kw_[1] ^ pack<std::uint64_t>(data+8)
         };
+        const std::uint64_t* k = sk_;
+        const std::uint64_t* end = sk_ + kc;
 
-        for (unsigned int i = 0u; i < nr - 6;) {
-            dp[1] ^= f(dp[0], k_[i++]);
-            dp[0] ^= f(dp[1], k_[i++]);
-            dp[1] ^= f(dp[0], k_[i++]);
-            dp[0] ^= f(dp[1], k_[i++]);
-            dp[1] ^= f(dp[0], k_[i++]);
-            dp[0] ^= f(dp[1], k_[i++]);
-            dp[0] = fl(dp[0], kl_[i/3-2]);
-            dp[1] = inv_fl(dp[1], kl_[i/3-1]);
+        while (true) {
+            dp[1] ^= f(dp[0], k[0]);
+            dp[0] ^= f(dp[1], k[1]);
+            dp[1] ^= f(dp[0], k[2]);
+            dp[0] ^= f(dp[1], k[3]);
+            dp[1] ^= f(dp[0], k[4]);
+            dp[0] ^= f(dp[1], k[5]);
+            if (k + 6 == end) {
+                break;
+            }
+            dp[0] = fl(dp[0], k[6]);
+            dp[1] = inv_fl(dp[1], k[7]);
+            k += 8;
         }
-        dp[1] ^= f(dp[0], k_[nr - 6]);
-        dp[0] ^= f(dp[1], k_[nr - 5]);
-        dp[1] ^= f(dp[0], k_[nr - 4]);
-        dp[0] ^= f(dp[1], k_[nr - 3]);
-        dp[1] ^= f(dp[0], k_[nr - 2]);
-        dp[0] ^= f(dp[1], k_[nr - 1]);
-
         dp[0] ^= kw_[3];
         dp[1] ^= kw_[2];
 
@@ -769,22 +779,24 @@ public:
             kw_[3] ^ pack<std::uint64_t>(data+8)
         };
 
-        for (int i = nr; i != 6;) {
-            dp[1] ^= f(dp[0], k_[--i]);
-            dp[0] ^= f(dp[1], k_[--i]);
-            dp[1] ^= f(dp[0], k_[--i]);
-            dp[0] ^= f(dp[1], k_[--i]);
-            dp[1] ^= f(dp[0], k_[--i]);
-            dp[0] ^= f(dp[1], k_[--i]);
-            dp[0] = fl(dp[0], kl_[i/3-1]);
-            dp[1] = inv_fl(dp[1], kl_[i/3-2]);
+        const std::uint64_t* end = sk_;
+        const std::uint64_t* k = sk_ + kc;
+
+        while (true) {
+            k -= 6;
+            dp[1] ^= f(dp[0], k[5]);
+            dp[0] ^= f(dp[1], k[4]);
+            dp[1] ^= f(dp[0], k[3]);
+            dp[0] ^= f(dp[1], k[2]);
+            dp[1] ^= f(dp[0], k[1]);
+            dp[0] ^= f(dp[1], k[0]);
+            if (k == end) {
+                break;
+            }
+            k -= 2;
+            dp[0] = fl(dp[0], k[1]);
+            dp[1] = inv_fl(dp[1], k[0]);
         }
-        dp[1] ^= f(dp[0], k_[5]);
-        dp[0] ^= f(dp[1], k_[4]);
-        dp[1] ^= f(dp[0], k_[3]);
-        dp[0] ^= f(dp[1], k_[2]);
-        dp[1] ^= f(dp[0], k_[1]);
-        dp[0] ^= f(dp[1], k_[0]);
         dp[1] ^= kw_[0];
         dp[0] ^= kw_[1];
 
@@ -792,9 +804,8 @@ public:
         unpack(dp[0], data+8);
     }
 private:
+    std::uint64_t sk_[kc];
     std::uint64_t kw_[t];
-    std::uint64_t k_[u];
-    std::uint64_t kl_[v];
 };
 
 }
