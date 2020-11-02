@@ -753,18 +753,17 @@ public:
         const std::uint64_t* end = sk_ + kc;
 
         while (true) {
-            dp[1] ^= f(dp[0], k[0]);
-            dp[0] ^= f(dp[1], k[1]);
-            dp[1] ^= f(dp[0], k[2]);
-            dp[0] ^= f(dp[1], k[3]);
-            dp[1] ^= f(dp[0], k[4]);
-            dp[0] ^= f(dp[1], k[5]);
-            if (k + 6 == end) {
+            dp[1] ^= f(dp[0], *k++);
+            dp[0] ^= f(dp[1], *k++);
+            dp[1] ^= f(dp[0], *k++);
+            dp[0] ^= f(dp[1], *k++);
+            dp[1] ^= f(dp[0], *k++);
+            dp[0] ^= f(dp[1], *k++);
+            if (k == end) {
                 break;
             }
-            dp[0] = fl(dp[0], k[6]);
-            dp[1] = inv_fl(dp[1], k[7]);
-            k += 8;
+            dp[0] = fl(dp[0], *k++);
+            dp[1] = inv_fl(dp[1], *k++);
         }
         dp[0] ^= kw_[3];
         dp[1] ^= kw_[2];
@@ -783,19 +782,17 @@ public:
         const std::uint64_t* k = sk_ + kc;
 
         while (true) {
-            k -= 6;
-            dp[1] ^= f(dp[0], k[5]);
-            dp[0] ^= f(dp[1], k[4]);
-            dp[1] ^= f(dp[0], k[3]);
-            dp[0] ^= f(dp[1], k[2]);
-            dp[1] ^= f(dp[0], k[1]);
-            dp[0] ^= f(dp[1], k[0]);
+            dp[1] ^= f(dp[0], *--k);
+            dp[0] ^= f(dp[1], *--k);
+            dp[1] ^= f(dp[0], *--k);
+            dp[0] ^= f(dp[1], *--k);
+            dp[1] ^= f(dp[0], *--k);
+            dp[0] ^= f(dp[1], *--k);
             if (k == end) {
                 break;
             }
-            k -= 2;
-            dp[0] = fl(dp[0], k[1]);
-            dp[1] = inv_fl(dp[1], k[0]);
+            dp[0] = fl(dp[0], *--k);
+            dp[1] = inv_fl(dp[1], *--k);
         }
         dp[1] ^= kw_[0];
         dp[0] ^= kw_[1];

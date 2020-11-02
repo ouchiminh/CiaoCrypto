@@ -5,6 +5,10 @@
 #include <cassert>
 #include <bit>
 
+#ifdef _MSC_VER
+#include <stdlib.h>
+#endif
+
 namespace ciao {
 template<class Int>
 inline constexpr auto rotr(Int x, unsigned nbit) noexcept
@@ -53,6 +57,16 @@ inline constexpr Int pack_impl(Int src, std::index_sequence<S...>) noexcept
     if constexpr (std::endian::big == std::endian::native) {
         return src;
     }
+#ifdef _MSC_VER
+    else if constexpr (std::is_same_v<std::uint16_t, Int>) {
+        return _byteswap_ushort(src);
+    } else if constexpr (std::is_same_v<std::uint32_t, Int> || std::is_same_v<unsigned long, Int>) {
+        static_assert(sizeof(Int) == 4);
+        return _byteswap_ulong(src);
+    } else if constexpr (std::is_same_v<std::uint64_t, Int>) {
+        return _byteswap_uint64(src);
+    }
+#endif
     else {
         return (((0xFF & (src >> (S * 8))) << (8 * (DestSize - S - 1))) | ...);
     }
