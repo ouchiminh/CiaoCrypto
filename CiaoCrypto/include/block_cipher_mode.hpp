@@ -5,7 +5,6 @@
 #include <cstdint>
 #include <cstddef>
 #include <cassert>
-#include <concepts>
 
 #include <ouchilib/result/result.hpp>
 
@@ -14,18 +13,7 @@
 
 namespace ciao {
 
-namespace detail {
 template<class A>
-concept block_cipher_algorithm = requires(const A a)
-{
-    A{ std::declval<const std::uint8_t*>() };
-    (size_t)A::block_size;
-    a.cipher(std::declval<std::uint8_t*>());
-    a.inv_cipher(std::declval<std::uint8_t*>());
-};
-}
-
-template<detail::block_cipher_algorithm A>
 class block_cipher {
 public:
     block_cipher() = delete;
@@ -51,7 +39,7 @@ protected:
     A algorithm_;
 };
 
-template<detail::block_cipher_algorithm A>
+template<class A>
 class ecb : public block_cipher<A> {
 public:
     using block_cipher<A>::block_cipher;
@@ -87,9 +75,9 @@ public:
 
 };
 
-template<detail::block_cipher_algorithm A, class = void>
+template<class A, class =void>
 class cbc;
-template<detail::block_cipher_algorithm A>
+template<class A>
 class cbc<A, std::enable_if_t<A::block_size == 16>> : public block_cipher<A> {
 public:
     static constexpr bool parallel_encrypt = false;
@@ -141,9 +129,9 @@ private:
     bytes<A::block_size> state_;
 };
 
-template<detail::block_cipher_algorithm A, class = void>
+template<class A, class = void>
 class ctr;
-template<detail::block_cipher_algorithm A>
+template<class A>
 class ctr<A, std::enable_if_t<A::block_size == 16>> : public block_cipher<A> {
 public:
     static constexpr bool parallel_encrypt = true;
@@ -214,10 +202,10 @@ private:
     } counter_, state_;
 };
 
-template<detail::block_cipher_algorithm A, class To, class = void>
+template<class A, class To, class = void>
 class stream_like_ctr;
 
-template<detail::block_cipher_algorithm A, class To>
+template<class A, class To>
 class stream_like_ctr<A, To, std::enable_if_t<(A::block_size > 8) && (A::block_size >= sizeof(To)) && std::is_trivially_constructible_v<To> && (A::block_size % sizeof(To) == 0), void>>
 {
 public:
@@ -253,7 +241,7 @@ public:
     }
     [[nodiscard]]
     auto next() noexcept
-        ->std::remove_cvref_t<To>
+        ->To
     {
         To ret;
         std::memcpy(&ret, state_.bctr + sizeof(To)*count_in_block_, sizeof(To));

@@ -3,7 +3,6 @@
 #include <cstdint>
 #include <cstring>
 #include <cassert>
-#include <bit>
 
 #ifdef _MSC_VER
 #include <stdlib.h>
@@ -26,6 +25,9 @@ inline constexpr auto rotl(Int x, unsigned nbit) noexcept
 }
 
 namespace detail {
+
+inline static const union { std::uint16_t w; std::uint8_t b[2]; } endian{(std::uint16_t)1};
+inline static const bool is_big_endian = endian.b[1];
 
 template<class T>
 void prefetch(const T *table, size_t count) noexcept
@@ -52,9 +54,13 @@ inline constexpr void unpack_impl(Int src, std::uint8_t* dest, std::index_sequen
     ((dest[S] = static_cast<std::uint8_t>(src >> (8 * (DestSize - S - 1)))), ...);
 }
 template<class Int, size_t DestSize, size_t ...S>
-inline constexpr Int pack_impl(Int src, std::index_sequence<S...>) noexcept
+inline Int pack_impl(Int src, std::index_sequence<S...>) noexcept
 {
-    if constexpr (std::endian::big == std::endian::native) {
+    union {
+        std::uint16_t d;
+        std::uint8_t b[2];
+    } endian{ (std::uint16_t)1 };
+    if (endian.b[1]) {
         return src;
     }
 #ifdef _MSC_VER
@@ -74,7 +80,7 @@ inline constexpr Int pack_impl(Int src, std::index_sequence<S...>) noexcept
 } // namespace detail
 
 template<class Int, size_t S = sizeof(Int)>
-inline constexpr auto unpack(Int src, void* dest)
+inline auto unpack(Int src, void* dest)
 -> std::enable_if_t<std::is_integral_v<Int>, void>
 {
     //detail::unpack_impl<Int, S>(src, reinterpret_cast<std::uint8_t*>(dest),
@@ -84,7 +90,7 @@ inline constexpr auto unpack(Int src, void* dest)
 }
 
 template<class Int, size_t S = sizeof(Int)>
-inline constexpr auto pack(const void* src) noexcept
+inline auto pack(const void* src) noexcept
 -> std::enable_if_t<std::is_integral_v<Int>, Int>
 {
     return detail::pack_impl<Int, S>(*reinterpret_cast<const Int*>(src),
@@ -230,7 +236,7 @@ inline auto shiftr_array(Int(&bits)[S], unsigned bit_shift_width) noexcept
     static_assert(CHAR_BIT == 8);
     assert(bit_shift_width < sizeof(bits) * CHAR_BIT);
 
-    constexpr bool is_big_endian = std::endian::native == std::endian::big;
+    using detail::is_big_endian;
     constexpr unsigned wbit = CHAR_BIT * sizeof(Int);
     unsigned bit_shift_mod_width = bit_shift_width & (wbit - 1);
     unsigned elm_shift_width = bit_shift_width / wbit;
@@ -238,7 +244,7 @@ inline auto shiftr_array(Int(&bits)[S], unsigned bit_shift_width) noexcept
     Int f = (~((Int)1 << bit_shift_mod_width))+1;   // high
     Int s = ~f;
     Int buf[S] = {};
-    if constexpr (is_big_endian) {
+    if (is_big_endian) {
         for (int i = 0; i < S - elm_shift_width; ++i) {
             if (i + elm_shift_width + 1 < (int)S)
                 buf[i + elm_shift_width + 1] |= (bits[i] & s) << (wbit - bit_shift_mod_width);
@@ -261,7 +267,7 @@ inline auto shiftl_array(Int(&bits)[S], unsigned bit_shift_width) noexcept
     static_assert(CHAR_BIT == 8);
     assert(bit_shift_width < sizeof(bits) * CHAR_BIT);
 
-    constexpr bool is_big_endian = std::endian::native == std::endian::big;
+    using detail::is_big_endian;
     constexpr unsigned wbit = CHAR_BIT * sizeof(Int);
     unsigned bit_shift_mod_width = bit_shift_width & (wbit - 1);
     unsigned elm_shift_width = bit_shift_width / wbit;
@@ -269,7 +275,7 @@ inline auto shiftl_array(Int(&bits)[S], unsigned bit_shift_width) noexcept
     Int s = (~((Int)1 << (wbit - bit_shift_mod_width))) + 1;   // high
     Int f = ~s;
     Int buf[S] = {};
-    if constexpr (is_big_endian) {
+    if (is_big_endian) {
         for (int i = elm_shift_width; i < (int)S; ++i) {
             if (i - (int)elm_shift_width - 1 >= 0)
                 buf[i - elm_shift_width - 1] |= (bits[i] & s) >> (wbit - bit_shift_mod_width);

@@ -9,8 +9,8 @@ namespace ciao {
 template<class Int, class Internal = Int>
 class dh_key_exchange {
 public:
-    using int_type = std::remove_cvref_t<Int>;
-    using internal_type = std::remove_cvref_t<Internal>;
+    using int_type = std::remove_cv_t<std::remove_reference_t<Int>>;
+    using internal_type = std::remove_cv_t<std::remove_reference_t<Internal>>;
     dh_key_exchange(const int_type& g, const int_type& p, const int_type& private_key)
         : g_{ g, p }, private_key_{ private_key }
     {

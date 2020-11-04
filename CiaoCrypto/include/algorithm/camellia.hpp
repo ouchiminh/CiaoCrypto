@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <cstring>
 #include <utility>
+#include <algorithm>
 #include "../common.hpp"
 
 namespace ciao {
