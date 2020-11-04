@@ -28,6 +28,7 @@ enum error_code : int64_t {
 };
 
 ref class block_cipher abstract {
+public:
     virtual std::int64_t cipher(cli::array<const Byte>^ src, std::size_t srcsize,
                                 cli::array<Byte>^ dest, std::size_t destsize) = 0;
     virtual std::int64_t inv_cipher(cli::array<const Byte>^ src, std::size_t srcsize,
@@ -46,9 +47,9 @@ public:
     {
         if (srcsize > RSIZE_MAX) return too_big_data;
         if (destsize < (srcsize / encoder_->block_size() + 1) * encoder_->block_size()) return too_short_dest;
-        const Byte* sptr = cli::pin_ptr<const Byte>(&src[0]);
-        Byte* dptr = cli::pin_ptr<Byte>(&dest[0]);
-        auto actualsize = detail::pad(sptr, srcsize, dptr, destsize, encoder_->block_size());
+        cli::pin_ptr<const Byte> sptr = (&src[0]);
+        cli::pin_ptr<Byte> dptr = (&dest[0]);
+        auto actualsize = detail::pad(sptr, srcsize, dptr, destsize, (std::uint8_t)encoder_->block_size());
         Byte* end = dptr + actualsize;
         while (dptr != end) {
             encoder_->cipher(dptr);
@@ -62,8 +63,8 @@ public:
         if (srcsize > RSIZE_MAX) return too_big_data;
         if (destsize < srcsize) return too_short_dest;
         if (srcsize % encoder_->block_size() != 0) corrupted_data;
-        const Byte* sptr = cli::pin_ptr<const Byte>(&src[0]);
-        Byte* dptr = cli::pin_ptr<Byte>(&dest[0]);
+        cli::pin_ptr<const Byte> sptr = (&src[0]);
+        cli::pin_ptr<Byte> dptr = (&dest[0]);
         Byte* const end = dptr + srcsize;
         std::memcpy(dptr, sptr, srcsize);
         while (dptr != end) {
