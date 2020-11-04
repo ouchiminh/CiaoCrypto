@@ -12,7 +12,7 @@ public:
     using int_type = std::remove_cvref_t<Int>;
     using internal_type = std::remove_cvref_t<Internal>;
     dh_key_exchange(const int_type& g, const int_type& p, const int_type& private_key)
-        : g_{g, p}, private_key_{private_key}
+        : g_{ g, p }, private_key_{ private_key }
     {
         //namespace mp = boost::multiprecision;
         //if (!mp::miller_rabin_test(p, 20))
@@ -23,6 +23,8 @@ public:
     {
         return pow(g_, private_key_);
     }
+    int_type get_generator() const noexcept { return (int_type)g_; }
+    int_type get_prime() const noexcept { return g_.mod(); }
     int_type calc_secret(const int_type& bobs_public_key) const
     {
         return pow(ouchi::math::modint<int_type>(bobs_public_key, g_.mod()), private_key_);
