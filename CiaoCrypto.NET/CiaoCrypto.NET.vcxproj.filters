@@ -32,5 +32,8 @@
     <ClInclude Include="block_cipher_algorithm.hpp">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="block_cipher_mode.net.hpp">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
