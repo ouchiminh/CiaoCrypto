@@ -4,7 +4,7 @@ using namespace System;
 
 namespace cn {
 
-ref class block_cipher_algorithm abstract {
+public ref class block_cipher_algorithm abstract {
 public:
 
     virtual void cipher(Byte* dptr) = 0;

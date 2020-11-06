@@ -8,7 +8,7 @@ using namespace System;
 
 namespace cn {
 
-ref class camellia128 : public block_cipher_algorithm {
+public ref class camellia128 : public block_cipher_algorithm {
     ciao::camellia<16>* encoder_;
 public:
     camellia128(cli::array<const Byte>^ key)
@@ -37,7 +37,7 @@ public:
     }
 };
 
-ref class camellia192 : public block_cipher_algorithm{
+public ref class camellia192 : public block_cipher_algorithm{
     ciao::camellia<24>* encoder_;
 public:
     camellia192(cli::array<const Byte>^ key)
@@ -67,7 +67,7 @@ public:
     }
 };
 
-ref class camellia256 : public block_cipher_algorithm{
+public ref class camellia256 : public block_cipher_algorithm{
     ciao::camellia<32>* encoder_;
 public:
     camellia256(cli::array<const Byte>^ key)

@@ -22,12 +22,12 @@ inline rsize_t pad(const void* src, size_t srcsize, void* dest, size_t destsize,
 }
 }
 
-enum error_code : int64_t {
+public enum error_code : int64_t {
     too_short_dest = std::numeric_limits<int64_t>::min(),
     too_big_data, corrupted_data
 };
 
-ref class block_cipher abstract {
+public ref class block_cipher abstract {
 public:
     virtual std::int64_t cipher(cli::array<const Byte>^ src, std::size_t srcsize,
                                 cli::array<Byte>^ dest, std::size_t destsize) = 0;
@@ -37,7 +37,7 @@ public:
 
 generic<class A>
     where A : block_cipher_algorithm
-ref class ecb : public block_cipher {
+public ref class ecb : public block_cipher {
 public:
     ecb(A encoder)
         : encoder_{encoder}

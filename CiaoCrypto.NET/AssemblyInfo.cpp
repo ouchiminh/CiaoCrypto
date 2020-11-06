@@ -1,4 +1,5 @@
-﻿
+﻿#include "CiaoCrypto.NET.hpp"
+
 using namespace System;
 using namespace System::Reflection;
 using namespace System::Runtime::CompilerServices;
