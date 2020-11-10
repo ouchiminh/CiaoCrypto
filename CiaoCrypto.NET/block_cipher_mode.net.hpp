@@ -81,5 +81,65 @@ private:
     A encoder_;
 };
 
+// ブロックサイズが16 byteのブロック暗号にしか対応していません。
+generic<class A>
+    where A : block_cipher_algorithm
+public ref class ctr : public block_cipher {
+public:
+    ctr(A encoder, cli::array<const Byte>^ nonce)
+        : ctr{ encoder, nonce, 0 }
+    {}
+    ctr(A encoder, cli::array<const Byte>^ nonce, size_t cnt)
+        : encoder_{ encoder }
+        , state_{ new std::uint64_t[2] }
+    {
+        cli::pin_ptr<const Byte> pnonce = &nonce[0];
+        std::memcpy(state_, pnonce, 8);
+        state_[1] = cnt;
+        assert(encoder_->block_size() == 16);
+    }
+
+    std::int64_t cipher(cli::array<const Byte>^ src, std::size_t srcsize,
+                        cli::array<Byte>^ dest, std::size_t destsize) override
+    {
+        if (srcsize > RSIZE_MAX) return too_big_data;
+        if (destsize < srcsize) return too_short_dest;
+
+        cli::pin_ptr<const Byte> sptr = (&src[0]);
+        cli::pin_ptr<Byte> dptr = (&dest[0]);
+        auto end = dptr + (srcsize / 16) * 16;
+        auto fin = sptr + srcsize;
+        std::memmove(dptr, sptr, srcsize);
+
+        std::uint64_t data[2] = { state_[0] };
+        for (; dptr < end; dptr += 16) {
+            ciao::unpack(state_[1]++, &data[1]);
+            encoder_->cipher((std::uint8_t*)data);
+            exclusive_or(dptr, (std::uint8_t*)data);
+        }
+        ciao::unpack(state_[1]++, &data[1]);
+        encoder_->cipher((std::uint8_t*)data);
+        for (auto* s = (std::uint8_t*)data; dptr < fin; ++dptr, ++s) {
+            *dptr ^= *s;
+        }
+        return srcsize;
+    }
+    std::int64_t inv_cipher(cli::array<const Byte>^ src, std::size_t srcsize,
+                            cli::array<Byte>^ dest, std::size_t destsize) override
+    {
+        return cipher(src, srcsize, dest, destsize);
+    }
+private:
+    static void exclusive_or(std::uint8_t* srcdest, const std::uint8_t* src)
+    {
+        std::uint64_t* pd = (std::uint64_t*)srcdest;
+        const std::uint64_t* ps = (std::uint64_t*)src;
+        pd[0] ^= ps[0];
+        pd[1] ^= ps[1];
+    }
+    A encoder_;
+    std::uint64_t *state_;
+};
+
 }
 
