@@ -177,6 +177,7 @@
     <ClCompile Include="src\test_camellia.cpp" />
     <ClCompile Include="src\test_elgamal.cpp" />
     <ClCompile Include="src\test_primality.cpp" />
+    <ClCompile Include="src\test_rsa.cpp" />
     <ClCompile Include="src\test_sha.cpp" />
   </ItemGroup>
   <ItemGroup>
