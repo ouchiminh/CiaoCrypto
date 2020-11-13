@@ -88,6 +88,10 @@ public:
     {
         return decrypt(m);
     }
+    bool verify(const Int signed_message, const Int raw_message)
+    {
+        return encrypt(signed_message) == raw_message;
+    }
     Int encrypt(const Int& m) const
     {
         ouchi::math::modint<Int, Internal> mc(m, key_.n);
