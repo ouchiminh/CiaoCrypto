@@ -35,17 +35,39 @@ Int random_prime(unsigned int r = 20)
     uint_t p;
     bool fp = false;
     while (!fp) {
-        p = rand() & ~(uint_t(1) << (sizeof(Int) - 1));
+        p = rand() & ~(uint_t(1) << (8*sizeof(Int) - 1));
         fp = mp::miller_rabin_test(p, r);
     }
     return (int_t)p;
+}
+
+template<class Rnd = std::mt19937>
+auto random_prime(unsigned int bits, unsigned int r = 20)
+-> std::enable_if_t<std::is_same_v<typename Rnd::result_type, std::uint32_t>, boost::multiprecision::cpp_int>
+{
+    namespace mp = boost::multiprecision;
+    assert(bits % 32 == 0);
+    mp::cpp_int p;
+    Rnd rnd{ std::random_device{}() };
+    auto fill_bits = [&rnd, r = bits / 32]() mutable {
+        mp::cpp_int v = 0;
+        for (auto i = 0u; i < r; ++i) {
+            v <<= 32;
+            v |= (std::uint32_t)rnd();
+        }
+        return v;
+    };
+    do {
+        p = fill_bits();
+    } while (mp::miller_rabin_test(p, r) == false);
+    return p;
 }
 
 template<class Int>
 Int find_generator(Int p)
 {
     ouchi::math::modint<Int> g{ 2, p };
-    while ((Int)ouchi::math::pow(g, (p-1)/2) == 1) {
+    while ((Int)ouchi::math::pow<Int, Int, Int>(g, (p-1)/2) == 1) {
         g += 1;
     }
     return (Int)g;

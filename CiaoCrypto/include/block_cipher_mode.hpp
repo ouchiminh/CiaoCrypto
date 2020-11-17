@@ -144,6 +144,7 @@ public:
     {
         memcpy(counter_.bctr, nonce, A::block_size / 2);
         set_block_number(block_num);
+        state_.qwctr[0] = counter_.qwctr[0];
     }
     template<class Int, std::enable_if_t<std::is_integral_v<Int> && sizeof(Int) == A::block_size / 2, int> = 0>
     ctr(const void* nonce,
@@ -153,6 +154,7 @@ public:
     {
         memcpy(counter_.bctr, nonce, A::block_size / 2);
         set_block_number(&block_num);
+        state_.qwctr[0] = counter_.qwctr[0];
     }
     void set_block_number(const void* block_num) noexcept
     {
@@ -182,14 +184,15 @@ private:
         __m128i cur;
         __m128i enc_state;
         for (rsize_t i = 0; i < count - A::block_size; i += A::block_size) {
-            state_ = counter_;
+            unpack<std::uint64_t, 8>(counter_.qwctr[1]++, &state_.qwctr[1]);
+            state_.qwctr[0] = counter_.qwctr[0];
             block_cipher<A>::algorithm_.cipher(state_.bctr);
             enc_state = _mm_load_si128((__m128i*)&state_);
             cur = _mm_loadu_si128((__m128i*)(data + i));
             _mm_storeu_si128((__m128i*)(dest + i), _mm_xor_si128(enc_state, cur));
-            counter_.qwctr[A::block_size / 8 - 1] += 1;
         }
-        state_ = counter_;
+        unpack<std::uint64_t, 8>(counter_.qwctr[1], &state_.qwctr[1]);
+        state_.qwctr[0] = counter_.qwctr[0];
         block_cipher<A>::algorithm_.cipher(state_.bctr);
         enc_state = _mm_load_si128((__m128i*)&state_);
         std::memcpy(&cur, data + count - A::block_size, count - (count / A::block_size - 1) * A::block_size);
@@ -229,7 +232,8 @@ public:
     void set_block_number(const void* block_num, unsigned count_in_block = 0) noexcept
     {
         std::memcpy(counter_.bctr + A::block_size / 2, block_num, A::block_size / 2);
-        state_ = counter_;
+        unpack<std::uint64_t, 8>(counter_.qwctr[1], &state_.qwctr[1]);
+        state_.qwctr[0] = counter_.qwctr[0];
         algorithm_.cipher(state_.bctr);
         count_in_block_ = count_in_block;
     }
@@ -247,7 +251,8 @@ public:
         std::memcpy(&ret, state_.bctr + sizeof(To)*count_in_block_, sizeof(To));
         if (++count_in_block_ == max_in_block) {
             counter_.qwctr[A::block_size / 8 - 1] += 1;
-            state_ = counter_;
+            unpack<std::uint64_t, 8>(counter_.qwctr[1], &state_.qwctr[1]);
+            state_.qwctr[0] = counter_.qwctr[0];
             algorithm_.cipher(state_.bctr);
             count_in_block_ = 0;
         }
