@@ -24,7 +24,7 @@ inline rsize_t pad(const void* src, size_t srcsize, void* dest, size_t destsize,
 
 public enum error_code : int64_t {
     too_short_dest = std::numeric_limits<int64_t>::min(),
-    too_big_data, corrupted_data
+    invalid_arguments, corrupted_data
 };
 
 public ref class block_cipher abstract {
@@ -45,7 +45,7 @@ public:
     std::int64_t cipher(cli::array<const Byte>^ src, std::size_t srcsize,
                         cli::array<Byte>^ dest, std::size_t destsize) override
     {
-        if (srcsize > RSIZE_MAX) return too_big_data;
+        if (srcsize > RSIZE_MAX) return invalid_arguments;
         if (destsize < (srcsize / encoder_->block_size() + 1) * encoder_->block_size()) return too_short_dest;
         cli::pin_ptr<const Byte> sptr = (&src[0]);
         cli::pin_ptr<Byte> dptr = (&dest[0]);
@@ -60,7 +60,7 @@ public:
     std::int64_t inv_cipher(cli::array<const Byte>^ src, std::size_t srcsize,
                             cli::array<Byte>^ dest, std::size_t destsize) override
     {
-        if (srcsize > RSIZE_MAX) return too_big_data;
+        if (srcsize > RSIZE_MAX) return invalid_arguments;
         if (destsize < srcsize) return too_short_dest;
         if (srcsize % encoder_->block_size() != 0) corrupted_data;
         cli::pin_ptr<const Byte> sptr = (&src[0]);
@@ -102,7 +102,7 @@ public:
     std::int64_t cipher(cli::array<const Byte>^ src, std::size_t srcsize,
                         cli::array<Byte>^ dest, std::size_t destsize) override
     {
-        if (srcsize > RSIZE_MAX) return too_big_data;
+        if (srcsize > RSIZE_MAX) return invalid_arguments;
         if (destsize < srcsize) return too_short_dest;
 
         cli::pin_ptr<const Byte> sptr = (&src[0]);

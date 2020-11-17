@@ -127,10 +127,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="bigint.hpp" />
     <ClInclude Include="block_cipher_algorithm.hpp" />
     <ClInclude Include="block_cipher_mode.net.hpp" />
     <ClInclude Include="camellia.net.hpp" />
     <ClInclude Include="CiaoCrypto.NET.hpp" />
+    <ClInclude Include="rsa.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AssemblyInfo.cpp" />

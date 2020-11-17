@@ -3,14 +3,15 @@
 #include <string>
 #include <iostream>
 #include <sstream>
+#include <limits>
 
 namespace ciao {
 
-enum class error_value : std::int32_t {
+enum class error_value : std::int64_t {
     normal = 0,
-    too_short_buffer = 1, invalid_arguments,
+    too_short_buffer = std::numeric_limits<std::int64_t>::min(), invalid_arguments,
     corrupted_data,
-    internal_error = (int)0x80000000
+    internal_error = -1 
 };
 
 class error_code {
