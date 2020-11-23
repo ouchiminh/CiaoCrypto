@@ -133,6 +133,7 @@
     <ClInclude Include="camellia.net.hpp" />
     <ClInclude Include="CiaoCrypto.NET.hpp" />
     <ClInclude Include="rsa.hpp" />
+    <ClInclude Include="sha.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AssemblyInfo.cpp" />
