@@ -179,6 +179,7 @@
     <ClCompile Include="src\test_primality.cpp" />
     <ClCompile Include="src\test_rsa.cpp" />
     <ClCompile Include="src\test_sha.cpp" />
+    <ClCompile Include="src\test_sss.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\CiaoCrypto\CiaoCrypto.vcxproj">

@@ -26,6 +26,7 @@
     <ClInclude Include="include\algorithm\elgamal.hpp" />
     <ClInclude Include="include\algorithm\rsa.hpp" />
     <ClInclude Include="include\algorithm\sha.hpp" />
+    <ClInclude Include="include\algorithm\sss.hpp" />
     <ClInclude Include="include\block_cipher_mode.hpp" />
     <ClInclude Include="include\bytes.hpp" />
     <ClInclude Include="include\common.hpp" />
