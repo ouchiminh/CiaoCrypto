@@ -11,6 +11,8 @@ OUCHI_TEST_CASE(test_rsa_builtin_type)
     OUCHI_CHECK_EQUAL(rsa.decrypt(c), m);
 }
 
+#ifdef NDEBUG
+
 OUCHI_TEST_CASE(test_rsa)
 {
     namespace mp = boost::multiprecision;
@@ -42,4 +44,5 @@ OUCHI_TEST_CASE(test_rsa_signature)
     auto signed_hash = rsa.sign(hash_int);
     OUCHI_CHECK_TRUE(rsa.verify(signed_hash, hash_int));
 }
+#endif
 
