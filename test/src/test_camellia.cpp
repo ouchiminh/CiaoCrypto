@@ -133,6 +133,26 @@ OUCHI_TEST_CASE(benchmark_camellia128_cbc)
     }
 
 }
+OUCHI_TEST_CASE(benchmark_camellia256_cbc)
+{
+    using namespace std::chrono;
+    const unsigned char key[32] = "\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f";
+    constexpr int r = 1024 * 16;
+    std::vector<std::uint8_t> data(16 * 1024, 0xc5);
+    std::vector<std::uint8_t> dest(16 * 1025);
+    ciao::cbc<ciao::camellia<32>> encoder(key, key);
+    data[0] = (unsigned char)steady_clock::now().time_since_epoch().count();
+    {
+        auto beg = std::chrono::steady_clock::now();
+        for (auto k = 0ull; k < r; ++k) {
+            (void)encoder.cipher(data.data(), data.size(), dest.data(), dest.size());
+        }
+
+        duration<double, std::ratio<1, 1>> dur = std::chrono::steady_clock::now() - beg;
+        std::cout << "camellia-256 cbc enc " <<  data.size() / dur.count() *r/ 1000 / 1000 << " M\n";
+    }
+
+}
 OUCHI_TEST_CASE(benchmark_camellia128_ctr)
 {
     using namespace std::chrono;
