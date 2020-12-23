@@ -1,4 +1,7 @@
-﻿#include "../ouchitest/include/ouchitest.hpp"
+﻿#include <iostream>
+#include "../ouchitest/include/ouchitest.hpp"
 
-OUCHI_TEST_MAIN;
+int main() {                                  
+    return ouchi::test::test_base::test_all();
+}
 

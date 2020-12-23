@@ -175,7 +175,7 @@ public:
         cipher((const std::uint8_t*)src, srcsize, (std::uint8_t*)dest);
         return ouchi::result::ok(srcsize);
     }
-    virtual ouchi::result::result<rsize_t, error_code> inv_cipher(const void* src, rsize_t srcsize, void* dest, rsize_t destsize)
+    virtual ouchi::result::result<rsize_t, error_code> inv_cipher(const void* src, rsize_t srcsize, void* dest, rsize_t destsize) override
     {
         return cipher(src, srcsize, dest, destsize);
     }
