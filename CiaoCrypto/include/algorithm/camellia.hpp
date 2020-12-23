@@ -743,63 +743,59 @@ public:
         constexpr int width = 8*(8-I);
         return detail::camellia_spbox[I-1][(std::uint8_t)(x >> width)];
     }
-
     inline void cipher(std::uint8_t* data) const noexcept
     {
-        std::uint64_t dp[2] = {
-            kw_[0] ^ pack<std::uint64_t>(data),
-            kw_[1] ^ pack<std::uint64_t>(data+8)
-        };
+        std::uint64_t d0 = kw_[0] ^ pack<std::uint64_t>(data);
+        std::uint64_t d1 = kw_[1] ^ pack<std::uint64_t>(data+8);
+
         const std::uint64_t* k = sk_;
         const std::uint64_t* end = sk_ + kc;
 
         while (true) {
-            dp[1] ^= f(dp[0], *k++);
-            dp[0] ^= f(dp[1], *k++);
-            dp[1] ^= f(dp[0], *k++);
-            dp[0] ^= f(dp[1], *k++);
-            dp[1] ^= f(dp[0], *k++);
-            dp[0] ^= f(dp[1], *k++);
+            d1 ^= f(d0, *k++);
+            d0 ^= f(d1, *k++);
+            d1 ^= f(d0, *k++);
+            d0 ^= f(d1, *k++);
+            d1 ^= f(d0, *k++);
+            d0 ^= f(d1, *k++);
             if (k == end) {
                 break;
             }
-            dp[0] = fl(dp[0], *k++);
-            dp[1] = inv_fl(dp[1], *k++);
+            d0 = fl(d0, *k++);
+            d1 = inv_fl(d1, *k++);
         }
-        dp[0] ^= kw_[3];
-        dp[1] ^= kw_[2];
+        d0 ^= kw_[3];
+        d1 ^= kw_[2];
 
-        unpack(dp[1], data);
-        unpack(dp[0], data+8);
+        unpack(d1, data);
+        unpack(d0, data+8);
     }
     inline void inv_cipher(std::uint8_t* data) const noexcept
     {
-        std::uint64_t dp[2] = {
-            kw_[2] ^ pack<std::uint64_t>(data),
-            kw_[3] ^ pack<std::uint64_t>(data+8)
-        };
+        std::uint64_t d0 = kw_[2] ^ pack<std::uint64_t>(data);
+        std::uint64_t d1 = kw_[3] ^ pack<std::uint64_t>(data+8);
 
         const std::uint64_t* end = sk_;
         const std::uint64_t* k = sk_ + kc;
 
         while (true) {
-            dp[1] ^= f(dp[0], *--k);
-            dp[0] ^= f(dp[1], *--k);
-            dp[1] ^= f(dp[0], *--k);
-            dp[0] ^= f(dp[1], *--k);
-            dp[1] ^= f(dp[0], *--k);
-            dp[0] ^= f(dp[1], *--k);
+            d1 ^= f(d0, *--k);
+            d0 ^= f(d1, *--k);
+            d1 ^= f(d0, *--k);
+            d0 ^= f(d1, *--k);
+            d1 ^= f(d0, *--k);
+            d0 ^= f(d1, *--k);
             if (k == end) {
                 break;
             }
-            dp[0] = fl(dp[0], *--k);
-            dp[1] = inv_fl(dp[1], *--k);
+            d0 = fl(d0, *--k);
+            d1 = inv_fl(d1, *--k);
         }
-        dp[1] ^= kw_[0];
-        dp[0] ^= kw_[1];
+        d1 ^= kw_[0];
+        d0 ^= kw_[1];
 
-        unpack(dp[1], data);
-        unpack(dp[0], data+8);
+        unpack(d1, data);
+        unpack(d0, data+8);
     }
 private:
     std::uint64_t sk_[kc];

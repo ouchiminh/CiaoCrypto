@@ -8,6 +8,7 @@
 
 #include <ouchilib/result/result.hpp>
 
+#include "common.hpp"
 #include "error_code.hpp"
 #include "bytes.hpp"
 
