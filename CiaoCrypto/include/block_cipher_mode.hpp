@@ -190,9 +190,10 @@ private:
             state_.qwctr[0] = counter_.qwctr[0];
             block_cipher<A>::algorithm_.cipher(state_.bctr);
             enc_state = _mm_load_si128((__m128i*)&state_);
-            cur = _mm_loadu_si128((__m128i*)(data) + i);
-            _mm_storeu_si128((__m128i*)(dest) + i, _mm_xor_si128(enc_state, cur));
+            cur = _mm_loadu_si128((__m128i*)(data + i * 16));
+            _mm_storeu_si128((__m128i*)(dest + i * 16), _mm_xor_si128(enc_state, cur));
         }
+        if (count % A::block_size == 0) return;
         unpack<std::uint64_t, 8>(counter_.qwctr[1]++, &state_.qwctr[1]);
         state_.qwctr[0] = counter_.qwctr[0];
         block_cipher<A>::algorithm_.cipher(state_.bctr);
