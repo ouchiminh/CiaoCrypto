@@ -764,11 +764,9 @@ public:
             d0 = fl(d0, *k++);
             d1 = inv_fl(d1, *k++);
         }
-        d0 ^= kw_[3];
-        d1 ^= kw_[2];
 
-        unpack(d1, data);
-        unpack(d0, data+8);
+        unpack(d1 ^ kw_[2], data);
+        unpack(d0 ^ kw_[3], data+8);
     }
     inline void inv_cipher(std::uint8_t* data) const noexcept
     {
@@ -791,11 +789,9 @@ public:
             d0 = fl(d0, *--k);
             d1 = inv_fl(d1, *--k);
         }
-        d1 ^= kw_[0];
-        d0 ^= kw_[1];
 
-        unpack(d1, data);
-        unpack(d0, data+8);
+        unpack(d1 ^ kw_[0], data);
+        unpack(d0 ^ kw_[1], data+8);
     }
 private:
     std::uint64_t sk_[kc];

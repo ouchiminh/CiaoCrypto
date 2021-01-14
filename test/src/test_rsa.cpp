@@ -17,9 +17,13 @@ OUCHI_TEST_CASE(test_rsa)
 {
     namespace mp = boost::multiprecision;
     mp::cpp_int m = INT_MAX;
+    // ビット数を指定してランダムなRSA鍵を生成
     auto k = ciao::rsa_key_gen(2048);
     ciao::rsa<mp::cpp_int> rsa(k);
+    // 暗号化
     auto c = rsa.encrypt(m);
+    // 復号して検証
+    assert(rsa.decrypt(c) == m);
     OUCHI_CHECK_EQUAL(rsa.decrypt(c), m);
 }
 

@@ -56,7 +56,7 @@ inline constexpr void unpack_impl(Int src, std::uint8_t* dest, std::index_sequen
 template<class Int, size_t DestSize, size_t ...S>
 inline Int pack_impl(Int src, std::index_sequence<S...>) noexcept
 {
-    union {
+    constexpr union {
         std::uint16_t d;
         std::uint8_t b[2];
     } endian{ (std::uint16_t)1 };

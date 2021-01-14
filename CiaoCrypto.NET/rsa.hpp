@@ -14,7 +14,7 @@ public:
     ciao::rsa_key<boost::multiprecision::cpp_int> raw()
     {
         ciao::rsa_key<boost::multiprecision::cpp_int> rawkey;
-        rawkey.decrypt_key = this->decrypt_key->value();
+        if(this->decrypt_key != nullptr) rawkey.decrypt_key = this->decrypt_key->value();
         rawkey.encrypt_key = this->encrypt_key->value();
         rawkey.n = this->n->value();
         return rawkey;
@@ -27,21 +27,21 @@ public:
         :rsa_{ new ciao::rsa<boost::multiprecision::cpp_int>(k->raw()) }
     {}
 
-    bigint^ encrypt(bigint data)
+    bigint^ encrypt(bigint^ data)
     {
-        return gcnew bigint(rsa_->encrypt(data.value()));
+        return gcnew bigint(rsa_->encrypt(data->value()));
     }
-    bigint^ decrypt(bigint data)
+    bigint^ decrypt(bigint^ data)
     {
-        return gcnew bigint(rsa_->decrypt(data.value()));
+        return gcnew bigint(rsa_->decrypt(data->value()));
     }
-    bigint^ sign(bigint data)
+    bigint^ sign(bigint^ data)
     {
-        return gcnew bigint(rsa_->sign(data.value()));
+        return gcnew bigint(rsa_->sign(data->value()));
     }
-    bool verify(bigint signed_message, bigint raw_message)
+    bool verify(bigint^ signed_message, bigint^ raw_message)
     {
-        return rsa_->verify(signed_message.value(), raw_message.value());
+        return rsa_->verify(signed_message->value(), raw_message->value());
     }
 
 

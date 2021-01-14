@@ -8,7 +8,7 @@ public:
     bigint()
         : value_{ new boost::multiprecision::cpp_int() }
     {}
-    explicit bigint(boost::multiprecision::cpp_int v)
+    explicit bigint(const boost::multiprecision::cpp_int& v)
         : value_{ new boost::multiprecision::cpp_int(v) }
     {}
     void import_bit(cli::array<const System::Byte>^ bits)
@@ -26,7 +26,7 @@ public:
         
         auto s = bits->Length;
         for (int i = 0; i < s; ++i) {
-            bits[i] = (unsigned char)(unsigned short)(*value_ >> (i * 8));
+            bits[i] = (std::uint8_t)(*value_ >> ((s - i - 1) * 8));
         }
     }
     boost::multiprecision::cpp_int& value()

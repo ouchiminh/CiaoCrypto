@@ -120,3 +120,21 @@ OUCHI_TEST_CASE(test_ctr_compatibility)
     }
 }
 
+OUCHI_TEST_CASE(test_ctr_compatibility2)
+{
+    using namespace ciao;
+    const char block[] = "\x00\x11\x22\x33\x44\x55\x66\x77\x88\x99\xaa\xbb\xcc\xdd\xee\xff";
+    const char key[] =
+        "\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f";
+    unsigned char dest[39] = {0,1,2,3,4,5,6,7};
+    std::uint8_t src[39];
+    std::memcpy(src, block, sizeof(block));
+    ctr<aes<16>> encoder((const std::uint8_t*)block, 0ull, (const std::uint8_t*)key);
+    stream_like_ctr<aes<16>, unsigned char> sencoder((const std::uint8_t*)block, 0ull, (const std::uint8_t*)key);
+
+    OUCHI_REQUIRE_TRUE(encoder.cipher(src, sizeof(src), dest, sizeof(dest)).is_ok());
+    for (auto i = 0u; i < sizeof(dest); ++i) {
+        OUCHI_CHECK_EQUAL(sencoder.next() ^ src[i], dest[i]);
+    }
+}
+

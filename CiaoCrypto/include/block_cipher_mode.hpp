@@ -47,7 +47,7 @@ public:
     static constexpr bool parallel_encrypt = true;
     static constexpr bool parallel_decrypt = true;
 
-    virtual ouchi::result::result<rsize_t, error_code> cipher(const void* src, rsize_t srcsize, void* dest, rsize_t destsize) override
+    virtual ouchi::result::result<rsize_t, error_code> cipher(const void* src, rsize_t srcsize, void* dest, rsize_t destsize) noexcept override
     {
         auto actual_size = block_cipher<A>::pad(src, srcsize, dest, destsize, A::block_size);
         if (srcsize > RSIZE_MAX) return ouchi::result::err(error_code(error_value::invalid_arguments));
@@ -58,7 +58,7 @@ public:
         }
         return ouchi::result::ok(actual_size);
     }
-    virtual ouchi::result::result<rsize_t, error_code> inv_cipher(const void* src, rsize_t srcsize, void* dest, rsize_t destsize) override
+    virtual ouchi::result::result<rsize_t, error_code> inv_cipher(const void* src, rsize_t srcsize, void* dest, rsize_t destsize) noexcept override
     {
         if (srcsize > RSIZE_MAX && srcsize % A::block_size != 0) return ouchi::result::err(error_code(error_value::invalid_arguments));
         if (srcsize > destsize) return ouchi::result::err(error_code(error_value::too_short_buffer));
@@ -94,7 +94,7 @@ public:
         std::memcpy(&state_, iv, sizeof(state_));
     }
     
-    virtual ouchi::result::result<rsize_t, error_code> cipher(const void* src, rsize_t srcsize, void* dest, rsize_t destsize) override
+    virtual ouchi::result::result<rsize_t, error_code> cipher(const void* src, rsize_t srcsize, void* dest, rsize_t destsize) noexcept override
     {
         auto actual_size = block_cipher<A>::pad(src, srcsize, dest, destsize, A::block_size);
         if (srcsize > RSIZE_MAX) return ouchi::result::err(error_code(error_value::invalid_arguments));
@@ -107,7 +107,7 @@ public:
         }
         return ouchi::result::ok(actual_size);
     }
-    virtual ouchi::result::result<rsize_t, error_code> inv_cipher(const void* src, rsize_t srcsize, void* dest, rsize_t destsize) override
+    virtual ouchi::result::result<rsize_t, error_code> inv_cipher(const void* src, rsize_t srcsize, void* dest, rsize_t destsize) noexcept override
     {
         bytes<A::block_size> prev;
         if (srcsize > RSIZE_MAX && srcsize % A::block_size != 0) return ouchi::result::err(error_code(error_value::invalid_arguments));
@@ -169,13 +169,13 @@ public:
     {
         set_block_number(&block_num);
     }
-    virtual ouchi::result::result<rsize_t, error_code> cipher(const void* src, rsize_t srcsize, void* dest, rsize_t destsize) override
+    virtual ouchi::result::result<rsize_t, error_code> cipher(const void* src, rsize_t srcsize, void* dest, rsize_t destsize) noexcept override
     {
         if (destsize < srcsize) return ouchi::result::err(error_code(error_value::too_short_buffer));
         cipher((const std::uint8_t*)src, srcsize, (std::uint8_t*)dest);
         return ouchi::result::ok(srcsize);
     }
-    virtual ouchi::result::result<rsize_t, error_code> inv_cipher(const void* src, rsize_t srcsize, void* dest, rsize_t destsize) override
+    virtual ouchi::result::result<rsize_t, error_code> inv_cipher(const void* src, rsize_t srcsize, void* dest, rsize_t destsize) noexcept override
     {
         return cipher(src, srcsize, dest, destsize);
     }
@@ -184,7 +184,8 @@ private:
     {
         __m128i cur;
         __m128i enc_state;
-        for (rsize_t i = 0; i < count - A::block_size; i += A::block_size) {
+        rsize_t i;
+        for (i = 0; i < count - A::block_size; i += A::block_size) {
             unpack<std::uint64_t, 8>(counter_.qwctr[1]++, &state_.qwctr[1]);
             state_.qwctr[0] = counter_.qwctr[0];
             block_cipher<A>::algorithm_.cipher(state_.bctr);

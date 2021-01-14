@@ -342,7 +342,9 @@ OUCHI_TEST_CASE(aesni128ecb_pad_benchmark)
     constexpr int r = 1024 * 256;
     std::vector<std::uint8_t> data(16ull * 1024, 0xc5);
     std::vector<std::uint8_t> dest(16ull * 1024 + 16);
+    // 暗号鍵をkeyとしてECBモードで暗号化する暗号器を初期化する
     ciao::ecb<ciao::aes_ni<16>> encoder(key);
+    assert(res.is_ok());
     {
         auto beg = std::chrono::steady_clock::now();
         for (int i = 0; i < r; ++i) {
