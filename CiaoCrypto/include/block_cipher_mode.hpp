@@ -185,21 +185,21 @@ private:
         __m128i cur;
         __m128i enc_state;
         rsize_t i;
-        for (i = 0; i < count - A::block_size; i += A::block_size) {
+        for (i = 0; i < count / A::block_size; ++i) {
             unpack<std::uint64_t, 8>(counter_.qwctr[1]++, &state_.qwctr[1]);
             state_.qwctr[0] = counter_.qwctr[0];
             block_cipher<A>::algorithm_.cipher(state_.bctr);
             enc_state = _mm_load_si128((__m128i*)&state_);
-            cur = _mm_loadu_si128((__m128i*)(data + i));
-            _mm_storeu_si128((__m128i*)(dest + i), _mm_xor_si128(enc_state, cur));
+            cur = _mm_loadu_si128((__m128i*)(data) + i);
+            _mm_storeu_si128((__m128i*)(dest) + i, _mm_xor_si128(enc_state, cur));
         }
         unpack<std::uint64_t, 8>(counter_.qwctr[1]++, &state_.qwctr[1]);
         state_.qwctr[0] = counter_.qwctr[0];
         block_cipher<A>::algorithm_.cipher(state_.bctr);
         enc_state = _mm_load_si128((__m128i*)&state_);
-        std::memcpy(&cur, data + count - A::block_size, count - (count / A::block_size - 1) * A::block_size);
+        std::memcpy(&cur, data + i * 16, count % A::block_size);
         cur = _mm_xor_si128(enc_state, cur);
-        std::memcpy(dest + count - A::block_size, &cur, count - (count / A::block_size - 1) * A::block_size);
+        std::memcpy(dest + i * 16, &cur, count % A::block_size);
     }
     alignas(__m128i) union {
         std::uint8_t bctr[A::block_size];
